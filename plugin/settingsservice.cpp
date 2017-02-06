@@ -61,7 +61,6 @@ SettingsService::SettingsService(QObject * parent)
     , m_connected(false)
     , m_pTranslators(QList<QTranslator *>())
 {
-    m_currentLocale = QLocale().bcp47Name();
 }
 
 SettingsService::~SettingsService()
