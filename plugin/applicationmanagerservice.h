@@ -71,7 +71,7 @@ public:
      * identifier (e.g. com.palm.app.calendar).
      * \return Returns the token number assigned to the call
      */
-    Q_INVOKABLE int launch(const QString& identifier, const QString& params = "{}", const bool checkUpdateOnLaunch = false, const bool autoInstallation = false);
+    Q_INVOKABLE int launch(const QString& identifier, const QString& params = "{}", const bool checkUpdateOnLaunch = false, const bool autoInstallation = false, const QString& reason = "");
     Q_INVOKABLE int removeLaunchPoint(const QString& identifier);
     Q_INVOKABLE int close(const QString& processId);
     Q_INVOKABLE int moveLaunchPoint(int index, int to);

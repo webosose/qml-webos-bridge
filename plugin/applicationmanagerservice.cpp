@@ -67,7 +67,7 @@ void ApplicationManagerService::cancel(LSMessageToken token)
         m_tokenServerStatus = registerServerStatus(interfaceName());
 }
 
-int ApplicationManagerService::launch(const QString& identifier, const QString& params, const bool checkUpdateOnLaunch, const bool autoInstallation)
+int ApplicationManagerService::launch(const QString& identifier, const QString& params, const bool checkUpdateOnLaunch, const bool autoInstallation, const QString& reason)
 {
     int token = 0;
 
@@ -79,7 +79,7 @@ int ApplicationManagerService::launch(const QString& identifier, const QString& 
         }
         token = call(serviceUri(),
               methodLaunch,
-              QString(QLatin1String("{\"id\":\"%1\", \"params\":%2, \"checkUpdateOnLaunch\":%3, \"autoInstallation\":%4}")).arg(identifier, paramsJSON, (checkUpdateOnLaunch ? "true" : "false"), (autoInstallation ? "true" : "false")));
+              QString(QLatin1String("{\"id\":\"%1\", \"params\":%2, \"checkUpdateOnLaunch\":%3, \"autoInstallation\":%4, \"reason\":\"%5\"}")).arg(identifier).arg(paramsJSON).arg(checkUpdateOnLaunch ? "true" : "false").arg(autoInstallation ? "true" : "false").arg(reason));
         m_launchCalls[token] = identifier;
     }
     // Let's keep this in for demo purposes for now:
