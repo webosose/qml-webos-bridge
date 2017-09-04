@@ -32,6 +32,9 @@ static const QLatin1String strSplashBackGround("splashBackground");
 static const QLatin1String strStatus("status");
 static const QLatin1String strProcessId("processId");
 static const QLatin1String strExtraInfo("extraInfo");
+static const QLatin1String strEvent("event");
+static const QLatin1String strShowSpinner("showSpinner");
+static const QLatin1String strShowSplash("showSplash");
 static const QLatin1String methodLaunch("/launch");
 static const QLatin1String methodClose("/close");
 static const QLatin1String methodRemoveLaunchPoint("/removeLaunchPoint");
@@ -41,6 +44,7 @@ static const QLatin1String methodListApps("/listApps");
 static const QLatin1String methodRunning("/running");
 static const QLatin1String methodOnLaunch("/onLaunch");
 static const QLatin1String methodGetAppLifeStatus("/getAppLifeStatus");
+static const QLatin1String methodGetAppLifeEvents("/getAppLifeEvents");
 static const QLatin1String serviceName("com.webos.applicationManager");
 
 ApplicationManagerService::ApplicationManagerService(QObject * parent)
@@ -147,6 +151,13 @@ int ApplicationManagerService::subscribeAppLifeStatus()
             QString(QLatin1String("{\"%1\":%2}")).arg(strSubscribe).arg(strTrue));
 }
 
+int ApplicationManagerService::subscribeAppLifeEvents()
+{
+    return callWithRetry(serviceUri(),
+            methodGetAppLifeEvents,
+            QString(QLatin1String("{\"%1\":%2}")).arg(strSubscribe).arg(strTrue));
+}
+
 int ApplicationManagerService::subscribeApplicationList()
 {
     return callWithRetry(serviceUri(),
@@ -230,6 +241,17 @@ void ApplicationManagerService::serviceResponse(const QString& method, const QSt
                 extraInfo = doc.toJson(QJsonDocument::Compact);
             }
             Q_EMIT(appLifeStatusChanged(appId, status, processId, extraInfo));
+        }
+    }
+    else if (method == methodGetAppLifeEvents) {
+        QString appId = rootObject.find(strAppId).value().toString();
+        if (!appId.isEmpty()) {
+            QString event = rootObject.find(strEvent).value().toString();
+            QString title = rootObject.find(strTitle).value().toString();
+            bool showSpinner = rootObject.find(strShowSpinner).value().toBool();
+            bool showSplash = rootObject.find(strShowSplash).value().toBool();
+            QString splashBackground = rootObject.find(strSplashBackGround).value().toString();
+            Q_EMIT(appLifeEventsChanged(appId, event, title, showSpinner, showSplash, splashBackground));
         }
     }
     else qWarning() << "ApplicationManagerService: Unknown method:"<<method;

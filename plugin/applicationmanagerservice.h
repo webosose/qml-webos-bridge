@@ -54,6 +54,7 @@ Q_SIGNALS:
     void closed(const QString& processId, int token);
     void appLaunched(const QString& appId, const QString& title, bool noSplash, const QString& splashBackground);
     void appLifeStatusChanged(const QString& appId, const QString& status, const QString& processId, const QString& extraInfo);
+    void appLifeEventsChanged(const QString& appId, const QString& event, const QString& title, bool showSpinner, bool showSplash, const QString& splashBackground);
 
     void applicationListChanged();
     void launchPointsListChanged();
@@ -77,6 +78,7 @@ public:
     Q_INVOKABLE int moveLaunchPoint(int index, int to);
     Q_INVOKABLE int subscribeLaunchedAppId();
     Q_INVOKABLE int subscribeAppLifeStatus();
+    Q_INVOKABLE int subscribeAppLifeEvents();
     Q_INVOKABLE int subscribeApplicationList();
     Q_INVOKABLE int subscribeLaunchPointsList();
 
