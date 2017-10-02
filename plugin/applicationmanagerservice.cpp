@@ -81,9 +81,15 @@ int ApplicationManagerService::launch(const QString& identifier, const QString& 
             paramsJSON.prepend(strLeftBrace);
             paramsJSON.append(strRightBrace);
         }
+
+        QString methodParams = "{\"id\":\"" + identifier
+            + "\",\"params\":" + paramsJSON
+            + ",\"checkUpdateOnLaunch\":" + (checkUpdateOnLaunch ? "true" : "false")
+            + ",\"autoInstallation\":" + (autoInstallation ? "true" : "false")
+            + ",\"reason\":\"" + reason + "\"}";
+
         token = call(serviceUri(),
-              methodLaunch,
-              QString(QLatin1String("{\"id\":\"%1\", \"params\":%2, \"checkUpdateOnLaunch\":%3, \"autoInstallation\":%4, \"reason\":\"%5\"}")).arg(identifier).arg(paramsJSON).arg(checkUpdateOnLaunch ? "true" : "false").arg(autoInstallation ? "true" : "false").arg(reason));
+              methodLaunch, methodParams);
         m_launchCalls[token] = identifier;
     }
     // Let's keep this in for demo purposes for now:
