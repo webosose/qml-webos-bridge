@@ -20,6 +20,7 @@
 #include <stdlib.h>
 
 #include <QCoreApplication>
+#include <QGuiApplication>
 #include <QJsonDocument>
 #include <QJsonObject>
 
@@ -80,6 +81,12 @@ void Service::setAppId(const QString& appId)
 
 int Service::call(const QString& service, const QString& method, const QString & payload, const QJSValue& timeout)
 {
+    if (QGuiApplication::arguments().contains(QStringLiteral("criu_enable")) &&
+        m_appId.isEmpty()) {
+        qWarning() << "Disallow to register service status for empty appId on criu_enable";
+        return LSMESSAGE_TOKEN_INVALID;
+    }
+
     if (!m_serviceManager)
         m_serviceManager = LunaServiceManager::instance(m_appId);
 
