@@ -1,0 +1,16 @@
+.project
+.cproject
+BUILD*/
+/build
+release-*/
+debug-*/
+patches/
+.obj
+.pch
+.moc
+Makefile
+launcher
+lowlevelapi
+systemclock
+build*stamp
+qmlfiles.pri

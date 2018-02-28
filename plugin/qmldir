@@ -1,0 +1,13 @@
+module WebOSServices
+
+ApplicationListModel 1.0 ApplicationListModel.qml
+LaunchPointsModel 1.0 LaunchPointsModel.qml
+PackagesListModel 1.0 PackagesListModel.qml
+RunningModel 1.0 RunningModel.qml
+AlertModel 1.0 AlertModel.qml
+InputAlertModel 1.0 InputAlertModel.qml
+ToastModel 1.0 ToastModel.qml
+PincodePromptModel 1.0 PincodePromptModel.qml
+DB8 1.0 DB8.qml
+
+plugin webosserviceplugin
