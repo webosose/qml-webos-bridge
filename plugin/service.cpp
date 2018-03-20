@@ -318,7 +318,7 @@ bool Service::callback(LSHandle *lshandle, LSMessage *msg, void *user_data)
     return retVal;
 }
 
-void Service::pushSubscription(const QString& method)
+void Service::pushSubscription(const QString& method, const QString& payload)
 {
     LSHandle *serviceHandle = m_serviceManager->getServiceHandle();
 
@@ -328,7 +328,7 @@ void Service::pushSubscription(const QString& method)
     }
 
     QJsonObject retObj;
-    QJsonObject message = QJsonDocument::fromJson("{}").object();
+    QJsonObject message = QJsonDocument::fromJson(payload.length() == 0 ? "{}" : payload.toUtf8()).object();
     bool methodFound = this->m_methods.contains(method);
     if (methodFound) {
         QVariant returnedValue;

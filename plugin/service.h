@@ -113,7 +113,7 @@ public:
     /*!
      * Push data to subscribers
      */
-    Q_INVOKABLE void pushSubscription(const QString& method);
+    Q_INVOKABLE void pushSubscription(const QString& method, const QString& param = QString(""));
 
     /*!
      * Register Server status whether it is connected or disconnected
