@@ -116,9 +116,6 @@ int ApplicationManagerService::moveLaunchPoint(int index, int to)
 
 QString ApplicationManagerService::applicationList()
 {
-    call(serviceUri(),
-          methodListApps);
-
     return m_applicationList;
 }
 
@@ -148,6 +145,13 @@ int ApplicationManagerService::subscribeAppLifeStatus()
     return callWithRetry(serviceUri(),
             methodGetAppLifeStatus,
             QString(QLatin1String("{\"%1\":%2}")).arg(strSubscribe).arg(strTrue));
+}
+
+int ApplicationManagerService::subscribeApplicationList()
+{
+    return callWithRetry(serviceUri(),
+          methodListApps,
+          QString(QLatin1String("{\"%1\":%2}")).arg(strSubscribe).arg(strTrue));
 }
 
 int ApplicationManagerService::subscribeLaunchPointsList()

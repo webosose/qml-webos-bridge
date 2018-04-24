@@ -77,6 +77,7 @@ public:
     Q_INVOKABLE int moveLaunchPoint(int index, int to);
     Q_INVOKABLE int subscribeLaunchedAppId();
     Q_INVOKABLE int subscribeAppLifeStatus();
+    Q_INVOKABLE int subscribeApplicationList();
     Q_INVOKABLE int subscribeLaunchPointsList();
 
     void setAppId(const QString& appId);

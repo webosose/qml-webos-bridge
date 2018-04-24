@@ -137,6 +137,8 @@ void Service::cancel(LSMessageToken token)
         m_serviceManager->cancel(this);
     else
         m_serviceManager->cancel(this, token);
+
+    Q_EMIT cancelled(token);
 }
 
 void Service::serviceResponse(const QString& method, const QString& payload, int token)

@@ -247,6 +247,12 @@ Q_SIGNALS:
      */
     void callResponse(QVariantMap response);
 
+    /*!
+     * \brief Indicates that the call has been cancelled.
+     * \param token Provides the token that is cancelled.
+     */
+    void cancelled(int token);
+
     void appIdChanged();
     void publicMethodsChanged();
     void privateMethodsChanged();
