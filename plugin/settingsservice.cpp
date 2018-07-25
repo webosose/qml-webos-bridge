@@ -38,6 +38,7 @@ static const QLatin1String strScreenRotation("screenRotation");
 static const QLatin1String strLocaleInfo("localeInfo");
 static const QLatin1String strLocales("locales");
 static const QLatin1String strUi("UI");
+static const QLatin1String strStt("STT");
 static const QLatin1String strSettings("settings");
 static const QLatin1String strUnderBar("_");
 static const QLatin1String strHyphen("-");
@@ -57,6 +58,7 @@ SettingsService::SettingsService(QObject * parent)
     , m_tokenSystemSettings(LSMESSAGE_TOKEN_INVALID)
     , m_tokenBootd(LSMESSAGE_TOKEN_INVALID)
     , m_subscriptionRequested(false)
+    , m_speechToTextLocaleMode(false)
     , m_cacheRead(false)
     , m_connected(false)
     , m_pTranslators(QList<QTranslator *>())
@@ -203,6 +205,9 @@ void SettingsService::serviceResponse(const QString& method, const QString& payl
                     QString s = object.value(strLocaleInfo).toObject().value(strLocales).toObject().value(strUi).toString();
                     qInfo() << "Set currentLocale from" << G_LOCALE_INFO_FILE << ":" << s;
                     setCurrentLocale(s);
+
+                    QString speechToTextLocale = object.value(strLocaleInfo).toObject().value(strLocales).toObject().value(strStt).toString();
+                    setSpeechToTextLocale(speechToTextLocale);
                 }
             }
             fileLocale.close();
@@ -237,6 +242,9 @@ void SettingsService::serviceResponse(const QString& method, const QString& payl
             QString s = rootObject.value(strSettings).toObject().value(strLocaleInfo).toObject().value(strLocales).toObject().value(strUi).toString();
             qInfo() << "Set currentLocale from LS2 response:" << s;
             setCurrentLocale(s);
+
+            QString speechToTextLocale = rootObject.value(strSettings).toObject().value(strLocaleInfo).toObject().value(strLocales).toObject().value(strStt).toString();
+            setSpeechToTextLocale(speechToTextLocale);
         } else if (token == m_tokenSystemSettings) {
             QString s = rootObject.value(strSettings).toObject().value(strScreenRotation).toString();
             qInfo() << "Set screenRotation from LS2 response:" << s;
@@ -326,7 +334,7 @@ void SettingsService::handleLocaleChange()
 
 bool SettingsService::findl10nFileName(const QString& dir, const QString& file, QString& rFilename)
 {
-    rFilename = m_currentLocale;
+    rFilename = speechToTextLocaleMode() ? m_speechToTextLocale : m_currentLocale;
 
     QString firstGuessl10nFileName = QString(QLatin1String("%1_%2")).arg(file).arg(rFilename.replace(strHyphen,strUnderBar));
     QString secondGuessl10nFileName = firstGuessl10nFileName.left(firstGuessl10nFileName.lastIndexOf(strUnderBar));
@@ -353,6 +361,22 @@ void SettingsService::setCurrentLocale(const QString& currentLocale) {
         QLocale::setDefault(QLocale(m_currentLocale));
         handleLocaleChange();
         emit currentLocaleChanged();
+    }
+}
+
+void SettingsService::setSpeechToTextLocaleMode(bool speechToTextLocaleMode) {
+    if (speechToTextLocaleMode != m_speechToTextLocaleMode) {
+        m_speechToTextLocaleMode = speechToTextLocaleMode;
+        handleLocaleChange();
+        emit speechToTextLocaleModeChanged();
+    }
+}
+
+void SettingsService::setSpeechToTextLocale(const QString& speechToTextLocale) {
+    if (!speechToTextLocale.isEmpty() && speechToTextLocale != m_speechToTextLocale) {
+        m_speechToTextLocale = speechToTextLocale;
+        handleLocaleChange();
+        emit speechToTextLocaleChanged();
     }
 }
 

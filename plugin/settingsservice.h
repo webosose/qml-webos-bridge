@@ -40,6 +40,7 @@ class SettingsService : public Service
     Q_OBJECT
 
     Q_PROPERTY(bool cached READ cached NOTIFY cachedChanged)
+    Q_PROPERTY(bool speechToTextLocaleMode READ speechToTextLocaleMode WRITE setSpeechToTextLocaleMode NOTIFY speechToTextLocaleModeChanged)
     Q_PROPERTY(QString currentLocale READ currentLocale WRITE setCurrentLocale NOTIFY currentLocaleChanged)
     Q_PROPERTY(QString l10nFileNameBase READ l10nFileNameBase WRITE setl10nFileNameBase NOTIFY l10nFileNameBaseChanged)
     Q_PROPERTY(QString l10nDirName READ l10nDirName WRITE setl10nDirName NOTIFY l10nDirNameChanged)
@@ -60,11 +61,14 @@ public:
 
     Q_INVOKABLE bool subscribeForLocaleChange(); // Deprecated
     Q_INVOKABLE bool subscribe();
+    void setSpeechToTextLocale(const QString& speechToTextLocale);
 
     Q_INVOKABLE QString getEmptyString() const { return QLatin1String(""); }
 
     bool cached() const { return m_cached; };
     QString currentLocale() const { return m_currentLocale; }
+    bool speechToTextLocaleMode() const { return m_speechToTextLocaleMode; }
+    QString speechToTextLocale() const { return m_speechToTextLocale; }
     QString l10nFileNameBase() const { return m_l10nFileNameBase; }
     QString l10nDirName() const { return m_l10nDirName; }
     QVariantList l10nPluginImports() const { return m_l10nPluginImports; }
@@ -74,6 +78,8 @@ public:
 signals:
     void cachedChanged();
     void currentLocaleChanged();
+    void speechToTextLocaleModeChanged();
+    void speechToTextLocaleChanged();
     void l10nFileNameBaseChanged();
     void l10nDirNameChanged();
     void l10nLoadSucceeded(const QString& file);
@@ -90,6 +96,7 @@ signals:
 public slots:
     void handleLocaleChange();
     void setCurrentLocale(const QString& currentLocale);
+    void setSpeechToTextLocaleMode(bool speechToTextLocaleMode);
     void setl10nFileNameBase(const QString& l10nFileNameBase);
     void setl10nDirName(const QString& l10nDirName);
     void setl10nPluginImports(const QVariantList& l10nPluginImports);
@@ -130,6 +137,7 @@ private:
 
     bool m_cached;
     QString m_currentLocale;
+    QString m_speechToTextLocale;
     QString m_l10nFileNameBase;
     QString m_l10nDirName;
     /*!
@@ -142,6 +150,7 @@ private:
     QString m_bootStatus;
 
     bool m_subscriptionRequested;
+    bool m_speechToTextLocaleMode;
     bool m_cacheRead;
     bool m_connected;
 
