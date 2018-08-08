@@ -26,7 +26,7 @@ ListModel {
         property bool ready: connected && db8.didReadAppOrder
 
         Component.onCompleted: {
-            listModel.status = ServiceModel.Loading
+            listModel.status = ServiceModel.Loading;
         }
 
         onReadyChanged: {
@@ -64,7 +64,7 @@ ListModel {
 
     property var db8: DB8 {
         appId: listModel.appId
-        id:db8
+        id: db8
         property var kindId: "com.webos.launcher.appordering:1"
         property var record: { "apps": [], "useredit": undefined }
         property bool didReadAppOrder: false
@@ -87,7 +87,7 @@ ListModel {
             });
 
             var callerIds = ["com.webos.app.magicnum", "com.webos.app.tvquery", "com.webos.app.lpm.simulator"];
-            for(var index in callerIds) {
+            for (var index in callerIds) {
                 putPermissions({
                     "permissions" : [{
                         "operations" : { "read":"allow" },
@@ -105,15 +105,15 @@ ListModel {
             function gotAppOrder(response) {
                 listModel.pmLogLPM.debug("LAUNCHPOINTSORDER_RECEIVED_FROM_DB", {}, "", true);
                 // keep our database clean: we only need one sort entry.
-                if(response.results.length > 1) {
+                if (response.results.length > 1) {
                     var toDelete = [];
-                    for(var i = 1; i < response.results.length; i++) {
+                    for (var i = 1; i < response.results.length; i++) {
                         toDelete.push(response.results[i]._id);
                     }
                     console.info("deleting extra sort entries: " + JSON.stringify(toDelete));
-                    del({"ids":toDelete}, function(){console.info("deleted extra entry.")})
+                    del({"ids":toDelete}, function(){console.info("deleted extra entry.")});
                 }
-                if(response.results.length > 0) {
+                if (response.results.length > 0) {
                     console.log("launchpoint order contains "+response.results[0].apps.length + " launchpoints")
                     record = response.results[0];
                     delete record._rev;
@@ -153,8 +153,7 @@ ListModel {
                 if (record._id == undefined) {
                     record._id = response.results[0].id;
                     console.info("new id: " + record._id);
-                }
-                else if (record._id != response.results[0].id) { // Paranoidal check
+                } else if (record._id != response.results[0].id) { // Paranoidal check
                     // Ignore different id
                     console.info("different id: " + record._id + " != " + response.results[0].id);
                 }
@@ -181,17 +180,15 @@ ListModel {
     function refreshLaunchPoints() { //GN
         console.log("----- Force refresh LaunchPoints list -----");
         var newSource = applicationManagerService.launchPointsList;
-        if( newSource !== source ) {
+        if (newSource !== source)
             source = newSource;
-        }
     }
 
     function commitAppOrder(useredit) {
         var order = [];
         var i;
-        for(i = 0; i < count; i++) {
+        for (i = 0; i < count; i++)
             order.push(get(i).launchPointId);
-        }
 
         console.log("commiting order: " +JSON.stringify(order));
         db8.storeAppOrder(order, useredit);
@@ -208,16 +205,14 @@ ListModel {
     // that matches the simulation in DummyLaunchPointsModel.
 
     function normalizeApp(app) {
-        if(app.bgImages && app.bgImages.length && !app.bgImages.count) {
+        if (app.bgImages && app.bgImages.length && !app.bgImages.count) {
             var tmp = [];
-            for(var x = 0; x < app.bgImages.length; x++) {
-                if(typeof app.bgImages[x] !== 'object') {
+            for (var x = 0; x < app.bgImages.length; x++) {
+                if (typeof app.bgImages[x] !== 'object')
                     tmp.push({ bgImage: app.bgImages[x] });
-                }
             }
-            if(tmp.length) {
+            if (tmp.length)
                 app.bgImages = tmp;
-            }
         }
         return app;
     }
@@ -251,7 +246,7 @@ ListModel {
     }
 
     function sortApps() {
-        if(appList.length == 0) {
+        if (appList.length == 0) {
             console.warn("did not get app list - nothing to sort yet.");
             return;
         }
@@ -259,25 +254,25 @@ ListModel {
         appList = appList.map(normalizeApp);
 
         var appOrder = db8.record.apps;
-        if(appOrder.length == 0) {
+        if (appOrder.length == 0) {
             console.warn("did not get order - nothing to sort yet.");
             sortModelByList(appList);
             sorted(); // emit a signal to indicate the model is sorted
             // NOTE: Do not commitAppOrder()
             return;
         }
+
         var appById={};
         var sortedApps=[];
         var i;
 
         // put launchpoints in hash map by unique launchPoint id (not appId)
-        for(i = 0; i < appList.length; i++) {
+        for (i = 0; i < appList.length; i++)
             appById[appList[i].launchPointId] = appList[i];
-        }
 
         // for each sorted app id append launch point object
-        for(i = 0; i < appOrder.length; i++) {
-            if(!appById[appOrder[i]]) {
+        for (i = 0; i < appOrder.length; i++) {
+            if (!appById[appOrder[i]]) {
                 // apps that went missing from SAMs list but are in the last sort list
                 // they will not be in the list stored back to the DB
                 console.log("launchPoint " + appOrder[i] + " not in SAM launchpoint list.");
@@ -294,8 +289,9 @@ ListModel {
 
         // apps that are not in the ordered list, but in sams list will be appended
         var indexToInsert = newAppsIndex;
-        for(i in appById) {
-            if (i === 'length' || appById[i] === undefined || !appById.hasOwnProperty(i)) continue;
+        for (i in appById) {
+            if (i === 'length' || appById[i] === undefined || !appById.hasOwnProperty(i))
+                continue;
 
             console.log("app not in db8 sort list: " + i);
             insert(indexToInsert, appById[i]);
@@ -308,9 +304,9 @@ ListModel {
     }
 
     function getLaunchPointPositionByLaunchPointId(lpId) {
-        for(var i = 0; i < count; i++) {
+        for (var i = 0; i < count; i++) {
             var launchPoint = get(i);
-            if( launchPoint.launchPointId !== lpId)
+            if (launchPoint.launchPointId !== lpId)
                 continue;
             return i;
         }
@@ -321,7 +317,7 @@ ListModel {
         if (isNaN(n))
             return defaultNewAppsIndex;
 
-      return parseInt(n);
+        return parseInt(n);
     }
 
     function getValidPosition(pos, minValue, maxValue) {
@@ -329,11 +325,10 @@ ListModel {
             pos = getNumber(pos);
             if (pos < minValue || pos > maxValue || pos > count)
                 pos = maxValue;
-            if(get(pos).unmovable) {
-                for(; pos < maxValue && pos < count; ++pos) {
-                    if(!get(pos).unmovable) {
+            if (get(pos).unmovable) {
+                for (; pos < maxValue && pos < count; ++pos) {
+                    if (!get(pos).unmovable)
                         break;
-                    }
                 }
             }
         } else {
@@ -352,7 +347,7 @@ ListModel {
         var updateByLocaleChanged = false;
         var updateByAppTitleChanged = false;
 
-        if( res.launchPoints === undefined ) {
+        if (res.launchPoints === undefined) {
             // SAM may send differences between old and new app info
             // we should add or remove app info
             if (res.change === "added" || res.change === "removed") {
@@ -425,11 +420,10 @@ ListModel {
                 if (res.caseDetail.change !== undefined) {
                     if (res.caseDetail.change.indexOf("BROADCAST_COUNTRY") !== -1 ||
                             res.caseDetail.change.indexOf("SERVICE_COUNTRY") !== -1 ||
-                            res.caseDetail.change.indexOf("NEWLIST_FROM_SDP") !== -1 ) {
+                            res.caseDetail.change.indexOf("NEWLIST_FROM_SDP") !== -1 )
                         needResetOrder = true;
-                    } else if (res.caseDetail.change.indexOf("LANG") !== -1) {
+                    else if (res.caseDetail.change.indexOf("LANG") !== -1)
                         updateByLocaleChanged = true;
-                    }
                 } else if (res.caseDetail.code !== undefined) {
                     console.warn("Fall-back to legacy code");
                     // NOTE: Legacy code cannot distinguash between broadcast and service country.
@@ -440,11 +434,10 @@ ListModel {
                     // 1001    change of language
                     // 1002    change of country
                     // 1003    change of both language and country
-                    if (res.caseDetail.code === 1002 || res.caseDetail.code === 1003) {
+                    if (res.caseDetail.code === 1002 || res.caseDetail.code === 1003)
                         needResetOrder = true;
-                    } else if (res.caseDetail.code === 1001) {
+                    else if (res.caseDetail.code === 1001)
                         updateByLocaleChanged = true;
-                    }
                 }
             }
 
@@ -467,7 +460,7 @@ ListModel {
         sortApps();
 
         if (listModel.status !== ServiceModel.Ready)
-            listModel.status = ServiceModel.Ready
+            listModel.status = ServiceModel.Ready;
 
         if (updateByLocaleChanged)
             updatedByLocaleChanged();
