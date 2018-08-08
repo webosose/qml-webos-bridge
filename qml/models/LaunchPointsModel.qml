@@ -321,12 +321,18 @@ ListModel {
     }
 
     function getValidPosition(pos, minValue, maxValue) {
+        // Correct minValue and maxValue if needed
+        if (minValue < 0)
+            minValue = 0;
+        if (maxValue > count)
+            maxValue = count;
         if (pos !== undefined) {
             pos = getNumber(pos);
-            if (pos < minValue || pos > maxValue || pos > count)
+            // Correct pos if needed
+            if (pos < minValue || pos >= maxValue) {
                 pos = maxValue;
-            if (get(pos).unmovable) {
-                for (; pos < maxValue && pos < count; ++pos) {
+            } else if (get(pos).unmovable) {
+                for (; pos < maxValue; ++pos) {
                     if (!get(pos).unmovable)
                         break;
                 }
