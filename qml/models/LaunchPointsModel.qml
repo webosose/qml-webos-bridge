@@ -122,7 +122,6 @@ ListModel {
                     console.warn("did not get launchPoint order from db8!");
                     storeAppOrder(); // Make sure "_id" field exist
                 }
-                listModel.pmLogLPM.info("NL_LAUNCHER_EDIT", {"edit_reason":"ON_BOOT", "app_id":"", "from":"", "to":""});
                 // mark the app order as read
                 didReadAppOrder = true;
             }
