@@ -372,7 +372,6 @@ ListModel {
                 // We got "launch point removed" notification
                 console.log("Remove LaunchPoint : " + res.id);
                 var locNmb = getLaunchPointPositionByLaunchPointId(res.launchPointId);
-                pmLogLPM.info("NL_LAUNCHER_EDIT", {"edit_reason": "ON_MOVE", "app_id": res.id, "from": locNmb, "to": -1}, "", true);
 
                 markedToKill(res.id);
 
