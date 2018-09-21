@@ -146,14 +146,17 @@ void Service::serviceResponse(const QString& method, const QString& payload, int
     checkForErrors(payload, token);
     Q_EMIT response(method, payload, token);
 
-    QVariant returnedValue;
+    // NOTE:
+    // It seems like a bug in Qt 5.9 where accessing "returnValue" key in obj
+    // results in the key gets defined as "null". Due to this we have to keep
+    // the original object untouched and use it when emitting signals.
     QJsonObject obj = QJsonDocument::fromJson(payload.toUtf8()).object();
-    if (obj[strReturnValue].toBool()) {
-        Q_EMIT callSuccess(obj.toVariantMap());
-    } else {
-        Q_EMIT callFailure(obj.toVariantMap());
-    }
-    Q_EMIT callResponse(obj.toVariantMap());
+    QVariantMap vmap = obj.toVariantMap();
+    if (obj[strReturnValue].toBool())
+        Q_EMIT callSuccess(vmap);
+    else
+        Q_EMIT callFailure(vmap);
+    Q_EMIT callResponse(vmap);
 }
 
 void Service::hubError(const QString& method, const QString& error, const QString& payload, int token)
