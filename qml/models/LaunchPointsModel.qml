@@ -330,7 +330,7 @@ ListModel {
             // Correct pos if needed
             if (pos < minValue || pos >= maxValue) {
                 pos = maxValue;
-            } else if (get(pos).unmovable) {
+            } else if (get(pos) && get(pos).unmovable) {
                 for (; pos < maxValue; ++pos) {
                     if (!get(pos).unmovable)
                         break;
