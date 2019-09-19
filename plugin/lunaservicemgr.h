@@ -85,7 +85,7 @@ public:
      *
      * \return The LunaServiceManager instance
      */
-    static LunaServiceManager*  instance(const QString& appId, ClientType clientType = ServiceClient);
+    static LunaServiceManager*  instance(const QString& appId, ClientType clientType = ServiceClient, const QString& roleType = "");
 
     /*!
      * \brief client type
@@ -141,6 +141,7 @@ private:
     bool               init();
     void               uninit();
     QString            m_appId;
+    QString            m_roleType;
     ClientType         m_clientType;
 
     LSHandle           *busHandle;

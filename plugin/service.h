@@ -164,8 +164,10 @@ public slots:
      * called at the top of the QML root document.
      */
     virtual void setAppId(const QString& appId);
+    virtual void setRoleType(const QString& appId);
 
     QString appId() const { return m_appId; }
+    QString roleType() const { return m_roleType; }
 
     /*!
      * \brief set the public bus methods
@@ -298,6 +300,7 @@ protected:
 private:
     LunaServiceManager* m_serviceManager;
     QString m_appId;
+    QString m_roleType;
     QString m_category;
     QStringList m_methods;
 

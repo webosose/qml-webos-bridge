@@ -73,7 +73,7 @@ QHash<QString, LunaServiceManager*> s_instances;
 static const QLatin1String strSubscribe("subscribe");
 static const QLatin1String strWatch("watch");
 
-LunaServiceManager* LunaServiceManager::instance(const QString& appId, ClientType clientType)
+LunaServiceManager* LunaServiceManager::instance(const QString& appId, ClientType clientType, const QString& roleType)
 {
     if (appId.isEmpty()) {
         // FIXME: For historical reason, we should allow an empty appId though it is not correct.
@@ -92,6 +92,7 @@ LunaServiceManager* LunaServiceManager::instance(const QString& appId, ClientTyp
         }
         instance->m_appId = appId;
         instance->m_clientType = clientType;
+        instance->m_roleType = roleType;
 
         if (!instance->init()) {
             qWarning() << "Failed to initialize LunaServiceManager instance for appId:" << appId;
@@ -225,7 +226,8 @@ LSMessageToken LunaServiceManager::call( const QString& service, const QString& 
          * Note: it is possible to use custom appId with ApplicationClient also, but our Service
          * implementation doesn't allow to change appId after the registration, only set custom appId
          * for ServiceClient. */
-        if (m_clientType == ApplicationClient || m_appId.isEmpty()) {
+
+        if (m_clientType == ApplicationClient || m_appId.isEmpty() || m_roleType == "regular") {
             retVal = LSCall(serviceHandle, (service + method).toUtf8().data(), payload.toUtf8().data(),
                             callback, key, &token, &lserror);
         } else {
@@ -235,7 +237,7 @@ LSMessageToken LunaServiceManager::call( const QString& service, const QString& 
         }
     } else {
         // check m_appId for some serviceClient which want to use LSCallFromApplication function
-        if (m_clientType == ApplicationClient || m_appId.isEmpty()) {
+        if (m_clientType == ApplicationClient || m_appId.isEmpty() || m_roleType == "regular") {
             retVal = LSCallOneReply(serviceHandle, (service + method).toUtf8().data(), payload.toUtf8().data(),
                                     callback, key, &token, &lserror);
         } else {

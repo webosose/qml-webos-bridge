@@ -49,6 +49,11 @@ Service::Service(QObject * parent)
     , m_serviceManager(0)
     , m_clientType(ServiceClient)
 {
+    const QByteArray &roleType = qgetenv("ROLE_TYPE");
+    if (!roleType.isEmpty()) {
+        setRoleType(roleType);
+    }
+
     const QByteArray &appId = qgetenv("APP_ID");
     if (appId.isEmpty()) {
         m_clientType = ServiceClient;
@@ -72,10 +77,23 @@ void Service::setAppId(const QString& appId)
     }
     if (m_appId.isEmpty()) {
         m_appId = appId;
-        m_serviceManager = LunaServiceManager::instance(appId, m_clientType);
+        m_serviceManager = LunaServiceManager::instance(appId, m_clientType, m_roleType);
         emit appIdChanged();
     } else if (m_appId != appId) {
         qWarning() << "attempt to change appId from" << m_appId << "to" << appId;
+    }
+}
+
+void Service::setRoleType(const QString& roleType)
+{
+    if (roleType.isEmpty()) {
+        qWarning() << "attempt to set null roleType";
+        return;
+    }
+    if (m_roleType.isEmpty()) {
+        if (roleType == "regular" || roleType == "privileged")
+            qDebug() << "Set roleType to " << roleType;
+            m_roleType = roleType;
     }
 }
 
