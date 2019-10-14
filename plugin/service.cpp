@@ -91,9 +91,10 @@ void Service::setRoleType(const QString& roleType)
         return;
     }
     if (m_roleType.isEmpty()) {
-        if (roleType == "regular" || roleType == "privileged")
+        if (roleType == "regular" || roleType == "privileged") {
             qDebug() << "Set roleType to " << roleType;
             m_roleType = roleType;
+        }
     }
 }
 
