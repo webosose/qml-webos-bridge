@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -308,6 +308,8 @@ bool Service::callback(LSHandle *lshandle, LSMessage *msg, void *user_data)
         if (LSMessageIsSubscription(msg)) {
             subscribed = LSSubscriptionAdd(lshandle, method.toUtf8().constData(), msg, &lserror);
             returnObject.insert(strSubscribed, subscribed);
+            if (subscribed)
+                LSSubscriptionSetCancelFunction(lshandle, &Service::callbackSubscriptionCancel, (void*)s, &lserror);
         }
     }
     returnObject.insert(strReturnValue, success);
@@ -318,7 +320,23 @@ bool Service::callback(LSHandle *lshandle, LSMessage *msg, void *user_data)
     return retVal;
 }
 
-void Service::pushSubscription(const QString& method, const QString& payload)
+bool Service::callbackSubscriptionCancel(LSHandle *lshandle, LSMessage *msg, void *user_data)
+{
+    Service* s = static_cast<Service *>(user_data);
+
+    if (s == NULL) {
+        qWarning("Subscription cancel callback context is invalid %p", user_data);
+        return false;
+    }
+
+    QString method(LSMessageGetMethod(msg));
+
+    Q_EMIT s->subscriptionAboutToCancel(method);
+
+    return true;
+}
+
+void Service::pushSubscription(const QString& method, const QString& param, const QString& responseMethod)
 {
     LSHandle *serviceHandle = m_serviceManager->getServiceHandle();
 
@@ -327,16 +345,21 @@ void Service::pushSubscription(const QString& method, const QString& payload)
         return;
     }
 
-    QJsonObject retObj;
-    QJsonObject message = QJsonDocument::fromJson(payload.length() == 0 ? "{}" : payload.toUtf8()).object();
-    bool methodFound = this->m_methods.contains(method);
-    if (methodFound) {
-        QVariant returnedValue;
-        methodFound = QMetaObject::invokeMethod(this, method.toUtf8().constData(),
-                                                Q_RETURN_ARG(QVariant, returnedValue),
-                                                Q_ARG(QVariant, QVariant::fromValue(message)));
+    if (!m_methods.contains(method)) {
+        qWarning() << "No method " << method << "for service" << appId();
+        return;
+    }
 
-        retObj = QJsonDocument::fromJson(returnedValue.toString().toUtf8()).object();
+    // Use method if responseMethod is not set
+    QString member = responseMethod.isEmpty() ? method : responseMethod;
+    QJsonObject arg = QJsonDocument::fromJson(param.length() == 0 ? "{}" : param.toUtf8()).object();
+    QVariant returnedValue;
+
+    if (QMetaObject::invokeMethod(this,
+                member.toUtf8().constData(),
+                Q_RETURN_ARG(QVariant, returnedValue),
+                Q_ARG(QVariant, QVariant::fromValue(arg)))) {
+        QJsonObject retObj = QJsonDocument::fromJson(returnedValue.toString().toUtf8()).object();
         QJsonObject returnObject;
         if (!retObj.contains(strErrorCode)) {
             QStringList keys = retObj.keys();
@@ -350,11 +373,23 @@ void Service::pushSubscription(const QString& method, const QString& payload)
             QJsonDocument doc(returnObject);
             LSSubscriptionReply(serviceHandle, method.toUtf8().constData(), doc.toJson().data(), &lserror);
         } else {
-            qWarning() << "Nothing to push for method " << method << "for service" << this->appId();
+            qWarning() << "Nothing to push for method " << method << "for service" << appId();
         }
     } else {
-        qWarning() << "No method " << method << "for service" << this->appId();
+        qWarning() << "Failed to invoke response method " << responseMethod << "for service" << appId();
     }
+}
+
+unsigned int Service::subscribersCount(const QString& method)
+{
+    LSHandle *serviceHandle = m_serviceManager->getServiceHandle();
+
+    if (!serviceHandle) {
+        qWarning() << "Failed at subscribersCount for method" << method << "due to invalid handle";
+        return 0;
+    }
+
+    return LSSubscriptionGetHandleSubscribersCount(m_serviceManager->getServiceHandle(), method.toUtf8().constData());
 }
 
 void Service::registerMethods(const QStringList &methods)

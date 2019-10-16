@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -113,7 +113,12 @@ public:
     /*!
      * Push data to subscribers
      */
-    Q_INVOKABLE void pushSubscription(const QString& method, const QString& param = QString(""));
+    Q_INVOKABLE void pushSubscription(const QString& method, const QString& param = QString(""), const QString& responseMethod = QString(""));
+
+    /*!
+     * Count of current subscribers
+     */
+    Q_INVOKABLE unsigned int subscribersCount(const QString &method);
 
     /*!
      * Register Server status whether it is connected or disconnected
@@ -133,6 +138,8 @@ public:
     virtual QString serviceUri() const;
 
     static bool callback(LSHandle *lshandle, LSMessage *msg, void *user_data);
+
+    static bool callbackSubscriptionCancel(LSHandle *lshandle, LSMessage *msg, void *user_data);
 
     static const QLatin1String strURIScheme;
     static const QLatin1String strURISchemeDeprecated;
@@ -252,6 +259,12 @@ Q_SIGNALS:
      * \param token Provides the token that is cancelled.
      */
     void cancelled(int token);
+
+    /*!
+     * \brief Indicates that a subscription is about to cancel.
+     * \param method Provides the method name that is being cancelled.
+     */
+    void subscriptionAboutToCancel(const QString& method);
 
     void appIdChanged();
     void publicMethodsChanged();
