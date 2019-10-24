@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 #include <QDebug>
 #include <QFile>
+#include <QDir>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLocale>
 #include <QGuiApplication>
-#include <QPointer>
 #include <QMutex>
 
 #include "settingsservice.h"
@@ -47,7 +47,165 @@ static const QLatin1String strDot(".");
 static const QLatin1String methodGetSystemSettings("/getSystemSettings");
 static const QLatin1String serviceNameSettings("com.webos.settingsservice");
 
-static QList<QTranslator *> translators = QList<QTranslator *>();
+/* NOTE
+   Translators are cached throughout process alive under same locale information. if the locale is
+   changed, the cached are cleared and re-created as the changed locale.
+*/
+static QList<QSharedPointer<QTranslator>> s_cachedTranslators = QList<QSharedPointer<QTranslator>>();
+
+class WebOSTranslator : public QTranslator
+{
+    Q_OBJECT
+public:
+    static bool isInstalledTranslator(const QLocale &locale, const QString &comp,
+                                      const QString &l10n, const QString &dir)
+    {
+        qDebug () << "s_cachedTranslators.length=" << s_cachedTranslators.size();
+        for (int i = 0; i < s_cachedTranslators.size(); i++) {
+            WebOSTranslator *wtr = reinterpret_cast<WebOSTranslator*>(s_cachedTranslators.at(i).data());
+            if (wtr->isEqualSource(locale, comp, l10n, dir)) {
+                qDebug() << "existed translator: qmDir=" << wtr->qmDir() << ", qmComp=" << wtr->qmComp()
+                         << ", qmL10n=" << wtr->qmL10n() << ", qmLocale=" << wtr->qmLocale()
+                         << ", WebOSTranslator=" << wtr;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static void dropCachedTranslator(const QLocale &locale)
+    {
+        QList<QSharedPointer<QTranslator>>::iterator it = s_cachedTranslators.begin();
+        while (it != s_cachedTranslators.end()) {
+            WebOSTranslator *wtr = reinterpret_cast<WebOSTranslator*>(it->data());
+            if (!wtr->isEqualLocale(locale)) {
+                qDebug() << "drop cached translator: qmDir=" << wtr->qmDir() << ", qmComp=" << wtr->qmComp()
+                         << ", qmL10n=" << wtr->qmL10n() << ", qmLocale=" << wtr->qmLocale()
+                         << ", WebOSTranslator=" << wtr;
+                it = s_cachedTranslators.erase(it);
+            }
+            else {
+                ++it;
+            }
+        }
+    }
+
+    static void dropCachedTranslator(const QLocale &locale, const QString &comp,
+                                     const QString &l10n, const QString &dir)
+    {
+        QList<QSharedPointer<QTranslator>>::iterator it = s_cachedTranslators.begin();
+        while (it != s_cachedTranslators.end()) {
+            WebOSTranslator *wtr = reinterpret_cast<WebOSTranslator*>(it->data());
+            if (!wtr->isEqualLocale(locale) && wtr->isEqualComp(comp, dir)) {
+                qDebug() << "drop cached translator: qmDir=" << wtr->qmDir() << ", qmComp=" << wtr->qmComp()
+                         << ", qmL10n=" << wtr->qmL10n() << ", qmLocale=" << wtr->qmLocale()
+                         << ", WebOSTranslator=" << wtr;
+                it = s_cachedTranslators.erase(it);
+            }
+            else {
+                ++it;
+            }
+        }
+    }
+
+    static void appendCachedTranslator(QSharedPointer<QTranslator> &tr)
+    {
+        s_cachedTranslators.append(tr);
+    }
+
+public:
+    explicit WebOSTranslator(QObject *parent = Q_NULLPTR)
+        : QTranslator(parent)
+        , m_installed(false)
+    {
+        qDebug() << "translator is created: WebOSTranslator=" << this;
+    }
+    ~WebOSTranslator()
+    {
+        uninstall();
+        qDebug() << "translator is destroyed: qmDir=" << m_qmDir << ", m_qmL10n=" << m_qmL10n
+                << ", m_qmComp=" << m_qmComp << ", qmLocale=" << m_qmLocale
+                << ", WebOSTranslator=" << this;
+    }
+
+    bool loadSource(const QLocale &locale, const QString &comp, const QString &l10n, const QString &dir,
+                    const QString &search_delimiters = strHyphen,
+                    const QString &format = strFileTypeQm,
+                    const QString &prefix = strUnderBar)
+    {
+        if (!QTranslator::load(l10n, dir, search_delimiters, format)) {
+            qWarning() << "failure in loading translator file: l10n=" << l10n
+                       << ", dir=" << dir << ", search_delimiters=" << search_delimiters
+                       << ", format=" << format;
+
+            if (QLocale(locale) == QLocale::C) {
+                qWarning() << "failure in loading translator file: locale=" << locale;
+                return false;
+            }
+            if (!QTranslator::load(locale, comp, prefix, dir)) {
+                qWarning() << "failure in loading translator file: locale=" << locale
+                           << ", comp=" << comp << ", prefix=" << prefix << ", dir=" << dir;
+                return false;
+            }
+        }
+
+        m_qmLocale = locale;
+        m_qmComp = comp;
+        m_qmL10n = l10n;
+        m_qmDir = QDir::cleanPath(dir);
+        qInfo() << "translator is loaded: qmDir=" << m_qmDir << ", m_qmL10n=" << m_qmL10n
+                << ", m_qmComp=" << m_qmComp << ", qmLocale=" << m_qmLocale
+                << ", WebOSTranslator=" << this;
+        return true;
+    }
+
+    bool install()
+    {
+        if (!m_installed) {
+            m_installed = QGuiApplication::instance()->installTranslator(this);
+            if (!m_installed)
+                qWarning() << "failure in translator install: WebOSTranslator=" << this;
+        }
+        return m_installed;
+    }
+    bool uninstall()
+    {
+        if (m_installed) {
+            if (!QGuiApplication::instance()->removeTranslator(this))
+                qWarning() << "failure in translator uninstall: WebOSTranslator=" << this;
+            m_installed = false;
+        }
+        return m_installed;
+    }
+
+    bool isEqualSource(const QLocale &locale, const QString &comp, const QString &l10n, const QString &dir)
+    {
+        return m_qmLocale == locale && m_qmComp == comp && m_qmL10n == l10n && m_qmDir == QDir::cleanPath(dir);
+    }
+    bool isEqualLocale(const QLocale &locale)
+    {
+        return m_qmLocale == locale;
+    }
+    bool isEqualComp(const QString &comp, const QString &dir)
+    {
+        return m_qmComp == comp && m_qmDir == QDir::cleanPath(dir);
+    }
+
+    QLocale qmLocale() const { return m_qmLocale; }
+    QString qmComp() const { return m_qmComp; }
+    QString qmL10n() const { return m_qmL10n; }
+    QString qmDir() const { return m_qmDir; }
+
+private:
+    QLocale m_qmLocale;
+    QString m_qmComp;
+    QString m_qmL10n;
+    QString m_qmDir;
+    bool m_installed;
+
+private:
+    Q_DISABLE_COPY(WebOSTranslator)
+};
 
 SettingsService::SettingsService(QObject * parent)
     : Service(parent)
@@ -61,19 +219,12 @@ SettingsService::SettingsService(QObject * parent)
     , m_speechToTextLocaleMode(false)
     , m_cacheRead(false)
     , m_connected(false)
-    , m_pTranslators(QList<QTranslator *>())
 {
 }
 
 SettingsService::~SettingsService()
 {
-    if (!m_pTranslators.isEmpty()) {
-        QList<QTranslator*>::iterator iter;
-        for (iter = m_pTranslators.begin(); iter != m_pTranslators.end(); iter++) {
-            QGuiApplication::instance()->removeTranslator(*iter);
-        }
-        m_pTranslators.clear();
-    }
+    m_translators.clear();
 }
 
 void SettingsService::setAppId(const QString& appId)
@@ -270,64 +421,64 @@ void SettingsService::hubError(const QString& method, const QString& error, cons
 
 // translations are found in
 // /.../locales/full-package-name/last-dotted-part-of-component-name
-
-bool SettingsService::loadTranslator(const QPointer<QTranslator> tr, const QString& dir, const QString& file)
+void SettingsService::uninstallTranslator(const QString& dir, const QString& file)
 {
-    QString componentName = file.right(file.size() - (file.lastIndexOf(strDot)+1));
-    QString outFilename;
-    if (findl10nFileName(dir, componentName, outFilename) && tr->load(outFilename, dir, strHyphen, strFileTypeQm)) {
-        return true;
-    }
-    if (QLocale(m_currentLocale) != QLocale::C && tr->load(QLocale(m_currentLocale), componentName, strUnderBar, dir)) {
-        return true;
-    }
-    qWarning() << "QLocale Data not matched" << m_currentLocale << dir << file;
-    return false;
+    QString compName = file.right(file.size() - (file.lastIndexOf(strDot)+1));
+    QString l10nName;
+    if (!findl10nFileName(dir, compName, l10nName))
+        qDebug() << "failure in finding l10n file: file=" << file << ", dir=" << dir;
+    WebOSTranslator::dropCachedTranslator(QLocale(m_currentLocale), compName, l10nName, dir);
 }
 
-QPointer<QTranslator> SettingsService::installTranslator(const QString& dir, const QString& file)
+void SettingsService::installTranslator(const QString& dir, const QString& file)
 {
-    QPointer<QTranslator> tr = new QTranslator(QGuiApplication::instance());
-    if (!loadTranslator(tr, dir, file)) {
-        emit l10nLoadFailed(file);
-        delete tr;
-    } else {
+    QString compName = file.right(file.size() - (file.lastIndexOf(strDot)+1));
+    QString l10nName;
+    if (!findl10nFileName(dir, compName, l10nName))
+        qDebug() << "failure in finding l10n file: file=" << file << ", dir=" << dir;
+
+    if (WebOSTranslator::isInstalledTranslator(QLocale(m_currentLocale), compName, l10nName, dir)) {
         emit l10nLoadSucceeded(file);
-        if (!QGuiApplication::instance()->installTranslator(tr)) {
-            emit l10nInstallFailed(file);
-            delete tr;
-        } else {
-            emit l10nInstallSucceeded(file);
-        }
+        emit l10nInstallSucceeded(file);
+        return;
     }
-    return tr;
+
+    QSharedPointer<QTranslator> tr(new WebOSTranslator(QGuiApplication::instance()));
+    if (!reinterpret_cast<WebOSTranslator*>(tr.data())->loadSource(QLocale(m_currentLocale),
+                                                                   compName, l10nName, dir,
+                                                                   strHyphen, strFileTypeQm, strUnderBar)) {
+        emit l10nLoadFailed(file);
+        return;
+    }
+    emit l10nLoadSucceeded(file);
+
+    if (!reinterpret_cast<WebOSTranslator*>(tr.data())->install()) {
+        emit l10nInstallFailed(file);
+        return;
+    }
+    emit l10nInstallSucceeded(file);
+
+    m_translators.append(tr);
+    WebOSTranslator::appendCachedTranslator(tr);
 }
 
 void SettingsService::handleLocaleChange()
 {
-    static QString currentLocale("");
     static QMutex mutex;
-
     QMutexLocker locker(&mutex);
-    if (currentLocale != m_currentLocale) {
-        QList<QTranslator*>::iterator iter;
-        for (iter = translators.begin(); iter != translators.end(); iter++)
-            QGuiApplication::instance()->removeTranslator(*iter);
-        translators.clear();
-        currentLocale = m_currentLocale;
-    }
 
-    QTranslator *translator = installTranslator(m_l10nDirName, m_l10nFileNameBase);
-    m_pTranslators.append(translator);
-    translators.append(translator);
+    m_translators.clear();
+    WebOSTranslator::dropCachedTranslator(QLocale(m_currentLocale));
+
+    uninstallTranslator(m_l10nDirName, m_l10nFileNameBase);
+    installTranslator(m_l10nDirName, m_l10nFileNameBase);
 
     QVariantList::iterator i;
     for (i = m_l10nPluginImports.begin(); i != m_l10nPluginImports.end(); i++) {
         QString index = (*i).toString();
         if (index.size()) {
-            translator = installTranslator(QString(QLatin1String("%1/../%2")).arg(m_l10nDirName).arg(index), index);
-            m_pTranslators.append(translator);
-            translators.append(translator);
+            uninstallTranslator(QString(QLatin1String("%1/../%2")).arg(m_l10nDirName).arg(index), index);
+            installTranslator(QString(QLatin1String("%1/../%2")).arg(m_l10nDirName).arg(index), index);
         }
     }
 }
@@ -422,3 +573,5 @@ void SettingsService::setBootStatus(const QString& bootStatus)
         emit bootStatusChanged();
     }
 }
+
+#include "settingsservice.moc"

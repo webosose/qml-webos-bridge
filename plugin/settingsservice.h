@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@
 #define SETTINGSSERVICE_H
 
 #include "service.h"
-#include <QUrl>
-#include <QHash>
+#include <QList>
 #include <QTranslator>
+#include <QSharedPointer>
 
 /*!
  * \class SettingsService
@@ -124,8 +124,8 @@ private:
     LSMessageToken m_tokenSystemSettings;
     LSMessageToken m_tokenBootd;
 
-    bool loadTranslator(const QPointer<QTranslator> tr, const QString& dir, const QString& file);
-    QPointer<QTranslator> installTranslator(const QString& dir, const QString& file);
+    void installTranslator(const QString& dir, const QString& file);
+    void uninstallTranslator(const QString& dir, const QString& file);
 
     bool subscribeInternal();
     bool tryToSubscribe();
@@ -154,7 +154,7 @@ private:
     bool m_cacheRead;
     bool m_connected;
 
-    QList<QTranslator *> m_pTranslators;
+    QList<QSharedPointer<QTranslator>> m_translators;
 };
 
 #endif // SETTINGSSERVICE_H
