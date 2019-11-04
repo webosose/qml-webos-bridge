@@ -108,10 +108,27 @@ public:
         }
     }
 
+    static void dropCachedTranslator(QTranslator *tr)
+    {
+        QList<QSharedPointer<QTranslator>>::iterator it = s_cachedTranslators.begin();
+        while (it != s_cachedTranslators.end()) {
+            WebOSTranslator *wtr = reinterpret_cast<WebOSTranslator*>(it->data());
+            if (wtr == tr) {
+                qDebug() << "drop cached translator: WebOSTranslator=" << wtr;
+                it = s_cachedTranslators.erase(it);
+            }
+            else {
+                ++it;
+            }
+        }
+    }
+
     static void appendCachedTranslator(QSharedPointer<QTranslator> &tr)
     {
         s_cachedTranslators.append(tr);
     }
+
+
 
 public:
     explicit WebOSTranslator(QObject *parent = Q_NULLPTR)
@@ -119,13 +136,15 @@ public:
         , m_installed(false)
     {
         qDebug() << "translator is created: WebOSTranslator=" << this;
+        connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit,
+                this, [this] () { WebOSTranslator::dropCachedTranslator(this); });
     }
     ~WebOSTranslator()
     {
         uninstall();
         qDebug() << "translator is destroyed: qmDir=" << m_qmDir << ", m_qmL10n=" << m_qmL10n
-                << ", m_qmComp=" << m_qmComp << ", qmLocale=" << m_qmLocale
-                << ", WebOSTranslator=" << this;
+                 << ", m_qmComp=" << m_qmComp << ", qmLocale=" << m_qmLocale
+                 << ", WebOSTranslator=" << this;
     }
 
     bool loadSource(const QLocale &locale, const QString &comp, const QString &l10n, const QString &dir,
