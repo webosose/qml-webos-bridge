@@ -75,6 +75,11 @@ public:
 
     static void dropCachedTranslator(const QLocale &locale)
     {
+        if (QLocale(locale) == QLocale::C) {
+            qWarning() << "cancel drop cached translators for undefined locale: locale=" << locale;
+            return;
+        }
+
         QList<QSharedPointer<QTranslator>>::iterator it = s_cachedTranslators.begin();
         while (it != s_cachedTranslators.end()) {
             WebOSTranslator *wtr = reinterpret_cast<WebOSTranslator*>(it->data());
