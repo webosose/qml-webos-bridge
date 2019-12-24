@@ -42,8 +42,6 @@ class NotificationService : public Service
     Q_PROPERTY(QString alertList READ alertList NOTIFY alertListChanged)
     Q_PROPERTY(QString inputAlertList READ inputAlertList NOTIFY inputAlertListChanged)
     Q_PROPERTY(QString pincodePromptList READ pincodePromptList NOTIFY pincodePromptListChanged)
-    Q_PROPERTY(QString appId WRITE setAppId READ appId) // We need it here too when we use Qt5.2, without
-                                                        // this declaration QML calls setAppId from Service.cpp
 
 Q_SIGNALS:
     void toastListChanged();

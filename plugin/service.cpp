@@ -54,7 +54,7 @@ Service::Service(QObject * parent)
         m_clientType = ServiceClient;
     } else {
         m_clientType = ApplicationClient;
-        setAppId(appId);
+        Service::setAppId(appId);
     }
     m_category = "/";
 }
