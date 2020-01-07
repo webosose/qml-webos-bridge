@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 LG Electronics, Inc.
+// Copyright (c) 2012-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ Service::Service(QObject * parent)
 {
     const QByteArray &roleType = qgetenv("ROLE_TYPE");
     if (!roleType.isEmpty()) {
-        setRoleType(roleType);
+        Service::setRoleType(roleType);
     }
 
     const QByteArray &appId = qgetenv("APP_ID");
