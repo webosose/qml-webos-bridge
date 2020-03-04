@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -104,13 +104,16 @@ public:
      * (e.g. "{\"keys\":[\"airplaneMode\"], \"subscribe\":true}")
      * \param listener The object that is supposed to receive the reply
        from the bus.
+     * \param sessionId The session id of destination
+     * (e.g. "ab5f918c-8260-45c8-acdc-d056d24866a0")
      * \return The token number that got assigned to this query call.
      * In the event of a malfunction "0" is returned.
      */
     LSMessageToken call(const QString& service,
                         const QString& method,
                         const QString& servicePayload,
-                        LunaServiceManagerListener * listener);
+                        LunaServiceManagerListener * listener,
+                        const QString& sessionId = QLatin1String(""));
 
     /*!
      * \brief Terminates a call causing any subscription for

@@ -1,4 +1,4 @@
-# Copyright (c) 2013-2018 LG Electronics, Inc.
+# Copyright (c) 2013-2020 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,6 +20,9 @@ MOC_DIR = .moc
 OBJECTS_DIR = .obj
 
 SUBDIRS = plugin
+
+load(configure)
+qtCompileTest(session)
 
 QML_FILES +=  \
     $$PWD/qml/models/LaunchPointsModel.qml \

@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 LG Electronics, Inc.
+// Copyright (c) 2012-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -87,13 +87,16 @@ public:
      *        (e.g. "{\"keys\":[\"airplaneMode\"], \"subscribe\":true}")
      * \param timeout Allows to set timeout for the call.
      *        QT signal response (this class) with CancelMethodCall message would be called by timeout.
+     * \param sessionId The session id of destination
+     *        (e.g. "ab5f918c-8260-45c8-acdc-d056d24866a0")
      * \return The token number that got assigned to this query call.
      *         In the event of a malfunction "0" is returned.
      */
     Q_INVOKABLE int call( const QString& service,
                           const QString& method,
                           const QString& payload = QLatin1String("{}"),
-                          const QJSValue& timeout = QJSValue());
+                          const QJSValue& timeout = QJSValue(),
+                          const QString& sessionId = QLatin1String(""));
 
     /*!
      * \brief Call to service bus using service and method properties.
@@ -157,6 +160,7 @@ public:
     static const QLatin1String strConnected;
     static const QLatin1String strTrue;
     static const QLatin1String strFalse;
+    static const QLatin1String strSessionId;
 
 public slots:
     /*!

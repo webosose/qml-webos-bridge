@@ -43,6 +43,7 @@ const QLatin1String Service::strServiceName("serviceName");
 const QLatin1String Service::strConnected("connected");
 const QLatin1String Service::strTrue("true");
 const QLatin1String Service::strFalse("false");
+const QLatin1String Service::strSessionId("sessionId");
 
 Service::Service(QObject * parent)
     : LunaServiceManagerListener(parent)
@@ -98,7 +99,7 @@ void Service::setRoleType(const QString& roleType)
     }
 }
 
-int Service::call(const QString& service, const QString& method, const QString & payload, const QJSValue& timeout)
+int Service::call(const QString& service, const QString& method, const QString & payload, const QJSValue& timeout, const QString& sessionId)
 {
     if (QGuiApplication::arguments().contains(QStringLiteral("criu_enable")) &&
         m_appId.isEmpty()) {
@@ -114,7 +115,8 @@ int Service::call(const QString& service, const QString& method, const QString &
     auto token = m_serviceManager->call(service,
                                    method,
                                    payload,
-                                   this);
+                                   this,
+                                   sessionId);
 
     if (token != LSMESSAGE_TOKEN_INVALID) {
         if (timeout.isNumber()) {
@@ -271,6 +273,9 @@ bool Service::callback(LSHandle *lshandle, LSMessage *msg, void *user_data)
 
     QString method(LSMessageGetMethod(msg));
     QString payload(LSMessageGetPayload(msg));
+#ifdef USE_LUNA_SERVICE2_SESSION_API
+    QString sessionId(LSMessageGetSessionId(msg));
+#endif
     bool success = false;
 
     QJsonObject returnObject;
@@ -287,6 +292,10 @@ bool Service::callback(LSHandle *lshandle, LSMessage *msg, void *user_data)
     }
 
     QJsonObject message = jsonDoc.object();
+#ifdef USE_LUNA_SERVICE2_SESSION_API
+    if (!sessionId.isEmpty())
+        message.insert(strSessionId, sessionId);
+#endif
 
     if (message.contains(strSubscribe) && !message.value(strSubscribe).isBool()) {
         returnObject.insert(strErrorCode, strErrorCodeInvalidType);

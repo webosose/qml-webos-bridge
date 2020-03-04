@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -193,9 +193,11 @@ LSHandle* LunaServiceManager::getServiceHandle()
 }
 
 LSMessageToken LunaServiceManager::call( const QString& service, const QString& method,
-                                        const QString& payload, LunaServiceManagerListener* inListener
+                                         const QString& payload, LunaServiceManagerListener* inListener,
+                                         const QString& sessionId
                                        )
 {
+    qDebug() << "LunaServiceManager" << service << method << payload << inListener << sessionId;
     LSHandle *serviceHandle = getServiceHandle();
 
     if (!serviceHandle) {
@@ -228,22 +230,50 @@ LSMessageToken LunaServiceManager::call( const QString& service, const QString& 
          * for ServiceClient. */
 
         if (m_clientType == ApplicationClient || m_appId.isEmpty() || m_roleType == "regular") {
-            retVal = LSCall(serviceHandle, (service + method).toUtf8().data(), payload.toUtf8().data(),
-                            callback, key, &token, &lserror);
+#ifdef USE_LUNA_SERVICE2_SESSION_API
+            if (!sessionId.isEmpty())
+                retVal = LSCallSession(serviceHandle, (service + method).toUtf8().data(), payload.toUtf8().data(),
+                                       sessionId.toUtf8().data(), callback, key, &token, &lserror);
+            else
+#endif
+                retVal = LSCall(serviceHandle, (service + method).toUtf8().data(), payload.toUtf8().data(),
+                                callback, key, &token, &lserror);
         } else {
-            retVal = LSCallFromApplication(serviceHandle, (service + method).toUtf8().data(),
-                                           payload.toUtf8().data(), m_appId.toUtf8().data(),
-                                           callback, key, &token, &lserror);
+#ifdef USE_LUNA_SERVICE2_SESSION_API
+            if (!sessionId.isEmpty())
+                retVal = LSCallSessionFromApplication(serviceHandle, (service + method).toUtf8().data(),
+                                                      payload.toUtf8().data(), sessionId.toUtf8().data(),
+                                                      m_appId.toUtf8().data(), callback, key, &token, &lserror);
+            else
+#endif
+                retVal = LSCallFromApplication(serviceHandle, (service + method).toUtf8().data(),
+                                               payload.toUtf8().data(), m_appId.toUtf8().data(),
+                                               callback, key, &token, &lserror);
         }
     } else {
         // check m_appId for some serviceClient which want to use LSCallFromApplication function
         if (m_clientType == ApplicationClient || m_appId.isEmpty() || m_roleType == "regular") {
-            retVal = LSCallOneReply(serviceHandle, (service + method).toUtf8().data(), payload.toUtf8().data(),
-                                    callback, key, &token, &lserror);
+#ifdef USE_LUNA_SERVICE2_SESSION_API
+            if (!sessionId.isEmpty())
+                retVal = LSCallSessionOneReply(serviceHandle, (service + method).toUtf8().data(),
+                                               payload.toUtf8().data(), sessionId.toUtf8().data(),
+                                               callback, key, &token, &lserror);
+            else
+#endif
+                retVal = LSCallOneReply(serviceHandle, (service + method).toUtf8().data(),
+                                        payload.toUtf8().data(), callback, key, &token, &lserror);
         } else {
-            retVal = LSCallFromApplicationOneReply(serviceHandle, (service + method).toUtf8().data(),
-                                                   payload.toUtf8().data(), m_appId.toUtf8().data(),
-                                                   callback, key, &token, &lserror);
+#ifdef USE_LUNA_SERVICE2_SESSION_API
+            if (!sessionId.isEmpty())
+                retVal = LSCallSessionFromApplicationOneReply(serviceHandle, (service + method).toUtf8().data(),
+                                                              payload.toUtf8().data(), sessionId.toUtf8().data(),
+                                                              m_appId.toUtf8().data(),
+                                                              callback, key, &token, &lserror);
+            else
+#endif
+                retVal = LSCallFromApplicationOneReply(serviceHandle, (service + method).toUtf8().data(),
+                                                       payload.toUtf8().data(), m_appId.toUtf8().data(),
+                                                       callback, key, &token, &lserror);
         }
     }
 
