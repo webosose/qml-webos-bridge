@@ -37,6 +37,7 @@
  *        id: myService
  *        appId: myAppId
  *        methods: ["myMethod"]
+ *        sessionId: "ab5f918c-8260-45c8-acdc-d056d24866a0"
  *
  *        function myMethod(msg) {
  *            // The msg is a JSON object that contains all the data
@@ -53,6 +54,7 @@ class Service : public LunaServiceManagerListener
 
     Q_PROPERTY(QString appId WRITE setAppId READ appId NOTIFY appIdChanged)
     Q_PROPERTY(QString category MEMBER m_category WRITE setCategory NOTIFY categoryChanged)
+    Q_PROPERTY(QString sessionId MEMBER m_sessionId WRITE setSessionId NOTIFY sessionIdChanged)
     Q_PROPERTY(QStringList publicMethods MEMBER m_methods WRITE setPublicMethods NOTIFY publicMethodsChanged)
     Q_PROPERTY(QStringList privateMethods MEMBER m_methods WRITE setPrivateMethods NOTIFY privateMethodsChanged)
     Q_PROPERTY(QStringList methods MEMBER m_methods WRITE setMethods NOTIFY methodsChanged)
@@ -87,7 +89,7 @@ public:
      *        (e.g. "{\"keys\":[\"airplaneMode\"], \"subscribe\":true}")
      * \param timeout Allows to set timeout for the call.
      *        QT signal response (this class) with CancelMethodCall message would be called by timeout.
-     * \param sessionId The session id of destination
+     * \param sessionId The session id of destination (override m_sessionId if not empty)
      *        (e.g. "ab5f918c-8260-45c8-acdc-d056d24866a0")
      * \return The token number that got assigned to this query call.
      *         In the event of a malfunction "0" is returned.
@@ -217,6 +219,11 @@ public slots:
      */
      void setCategory(const QString& category);
 
+    /*!
+     * \brief set the sessionId.
+     */
+     void setSessionId(const QString& sessionId);
+
 Q_SIGNALS:
 
     /*!
@@ -277,6 +284,7 @@ Q_SIGNALS:
     void privateMethodsChanged();
     void methodsChanged();
     void categoryChanged();
+    void sessionIdChanged();
     void callServiceChanged();
     void callMethodChanged();
 
@@ -306,6 +314,7 @@ private:
     QString m_appId;
     QString m_roleType;
     QString m_category;
+    QString m_sessionId;
     QStringList m_methods;
 
     QString m_callServiceName;
@@ -314,6 +323,11 @@ private:
     ClientType m_clientType;
 
     void registerMethods(const QStringList &methods);
+    int callInternal(const QString& service,
+                     const QString& method,
+                     const QString& payload,
+                     const QJSValue& timeout,
+                     const QString& sessionId);
 };
 
 #endif // SERVICE_H

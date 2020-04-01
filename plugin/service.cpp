@@ -99,7 +99,13 @@ void Service::setRoleType(const QString& roleType)
     }
 }
 
-int Service::call(const QString& service, const QString& method, const QString & payload, const QJSValue& timeout, const QString& sessionId)
+int Service::call(const QString& service, const QString& method, const QString& payload, const QJSValue& timeout, const QString& sessionId)
+{
+    return callInternal(service, method, payload, timeout,
+                        sessionId.isEmpty() ? m_sessionId : sessionId);
+}
+
+int Service::callInternal(const QString& service, const QString& method, const QString & payload, const QJSValue& timeout, const QString& sessionId)
 {
     if (QGuiApplication::arguments().contains(QStringLiteral("criu_enable")) &&
         m_appId.isEmpty()) {
@@ -133,7 +139,7 @@ int Service::call(const QString& service, const QString& method, const QString &
 
 int Service::callService(const QVariantMap& payload)
 {
-    return call(m_callServiceName, m_callServiceMethod, QJsonDocument::fromVariant(payload).toJson());
+    return call(m_callServiceName, m_callServiceMethod, QJsonDocument::fromVariant(payload).toJson(QJsonDocument::Compact));
 }
 
 int Service::callWithRetry(const QString& service, const QString& method, const QString & payload, int retry)
@@ -227,10 +233,15 @@ QString Service::serviceUri() const
 
 int Service::registerServerStatus(const QString &serviceName)
 {
-    int token = call(QLatin1String("palm://com.palm.bus"),
-          QLatin1String("/signal/registerServerStatus"),
-          QString(QLatin1String("{\"%1\":\"%2\", \"%3\": %4}")).arg(strServiceName).arg(serviceName).arg(strSubscribe).arg(strTrue));
-
+    QJsonObject obj;
+    obj.insert(strServiceName, serviceName);
+    obj.insert(strSubscribe, true);
+    if (!m_sessionId.isEmpty())
+        obj.insert(strSessionId, m_sessionId);
+    QString params = QJsonDocument(obj).toJson(QJsonDocument::Compact);
+    int token = callInternal(QLatin1String("luna://com.webos.service.bus"),
+                             QLatin1String("/signal/registerServerStatus"),
+                             params, QJSValue(), QString());
     if (token == LSMESSAGE_TOKEN_INVALID)
         qWarning() << "registerServerStatus failed, serviceName:" << serviceName << "appId:" << m_appId;
     else
@@ -461,6 +472,13 @@ void Service::setCategory(const QString& category)
     Q_ASSERT(m_category.length() == 0);
     m_category = category;
     emit categoryChanged();
+}
+
+void Service::setSessionId(const QString& sessionId)
+{
+    Q_ASSERT(m_sessionId.length() == 0);
+    m_sessionId = sessionId;
+    emit sessionIdChanged();
 }
 
 void Service::setCallServiceName(QString& newServiceName) {
