@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 LG Electronics, Inc.
+// Copyright (c) 2012-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -116,6 +116,9 @@ protected:
     void hubError(const QString& method, const QString& error, const QString& payload, int token);
 
     bool findl10nFileName(const QString& dir, const QString& file, QString &rFilename);
+
+protected slots:
+    void resetSubscription();
 
 private:
     LSMessageToken m_tokenServerStatusBootd;

@@ -54,7 +54,7 @@ class Service : public LunaServiceManagerListener
 
     Q_PROPERTY(QString appId WRITE setAppId READ appId NOTIFY appIdChanged)
     Q_PROPERTY(QString category MEMBER m_category WRITE setCategory NOTIFY categoryChanged)
-    Q_PROPERTY(QString sessionId MEMBER m_sessionId WRITE setSessionId NOTIFY sessionIdChanged)
+    Q_PROPERTY(QString sessionId READ sessionId WRITE setSessionId NOTIFY sessionIdChanged)
     Q_PROPERTY(QStringList publicMethods MEMBER m_methods WRITE setPublicMethods NOTIFY publicMethodsChanged)
     Q_PROPERTY(QStringList privateMethods MEMBER m_methods WRITE setPrivateMethods NOTIFY privateMethodsChanged)
     Q_PROPERTY(QStringList methods MEMBER m_methods WRITE setMethods NOTIFY methodsChanged)
@@ -91,6 +91,7 @@ public:
      *        QT signal response (this class) with CancelMethodCall message would be called by timeout.
      * \param sessionId The session id of destination (override m_sessionId if not empty)
      *        (e.g. "ab5f918c-8260-45c8-acdc-d056d24866a0")
+     *        m_sessionId will be ignored if sessionId is "no-session"
      * \return The token number that got assigned to this query call.
      *         In the event of a malfunction "0" is returned.
      */
@@ -126,9 +127,12 @@ public:
     Q_INVOKABLE unsigned int subscribersCount(const QString &method);
 
     /*!
-     * Register Server status whether it is connected or disconnected
+     * \brief Register Server status whether it is connected or disconnected
+     * \param serviceName Service name to check
+     * \param useSession true if service is in session or false(default)
+     * \return The token number assigned to this query, 0 for error condition.
      */
-    Q_INVOKABLE int registerServerStatus(const QString &serviceName);
+    Q_INVOKABLE int registerServerStatus(const QString &serviceName, bool useSession = false);
 
     /*!
      * \brief Derived classes reimplement the matching interface name
@@ -217,12 +221,13 @@ public slots:
      * This category is applied to both the private and the public
      * bus.
      */
-     void setCategory(const QString& category);
+    void setCategory(const QString& category);
 
     /*!
      * \brief set the sessionId.
      */
-     void setSessionId(const QString& sessionId);
+    void setSessionId(const QString& sessionId);
+    QString sessionId() const { return m_sessionId; }
 
 Q_SIGNALS:
 

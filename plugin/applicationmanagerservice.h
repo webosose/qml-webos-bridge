@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -104,6 +104,9 @@ protected:
     void serviceResponse(const QString& method, const QString& payload, int token);
 
     void hubError(const QString& method, const QString& error, const QString& payload, int token);
+
+protected slots:
+    void resetSubscription();
 
 private:
     bool m_connected;

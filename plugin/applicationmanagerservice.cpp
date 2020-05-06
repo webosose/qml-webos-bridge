@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -52,6 +52,7 @@ ApplicationManagerService::ApplicationManagerService(QObject * parent)
     , m_connected(false)
     , m_tokenServerStatus(LSMESSAGE_TOKEN_INVALID)
 {
+    connect(this, &Service::sessionIdChanged, this, &ApplicationManagerService::resetSubscription);
 }
 
 void ApplicationManagerService::setAppId(const QString& appId)
@@ -59,7 +60,7 @@ void ApplicationManagerService::setAppId(const QString& appId)
     Service::setAppId(appId);
 
     if (m_tokenServerStatus == LSMESSAGE_TOKEN_INVALID)
-        m_tokenServerStatus = registerServerStatus(interfaceName());
+        m_tokenServerStatus = registerServerStatus(interfaceName(), true);
 }
 
 void ApplicationManagerService::cancel(LSMessageToken token)
@@ -68,7 +69,7 @@ void ApplicationManagerService::cancel(LSMessageToken token)
 
     // the subscription to registerServerStatus is also cancelled this case, restore it
     if (token == LSMESSAGE_TOKEN_INVALID || token == m_tokenServerStatus)
-        m_tokenServerStatus = registerServerStatus(interfaceName());
+        m_tokenServerStatus = registerServerStatus(interfaceName(), true);
 }
 
 int ApplicationManagerService::launch(const QString& identifier, const QString& params, const bool checkUpdateOnLaunch, const bool autoInstallation, const QString& reason)
@@ -269,13 +270,21 @@ void ApplicationManagerService::hubError(const QString& method, const QString& e
 
     if (error == LUNABUS_ERROR_SERVICE_DOWN) {
         qWarning() << "ApplicationManagerService: Hub error:" << error << "- recover subscriptions";
-        m_connected = false;
-        Q_EMIT connectedChanged();
-        cancel();
+        resetSubscription();
     }
 }
 
 QString ApplicationManagerService::interfaceName() const
 {
     return QString(serviceName);
+}
+
+void ApplicationManagerService::resetSubscription()
+{
+    qWarning() << __PRETTY_FUNCTION__;
+    if (m_connected) {
+        m_connected = false;
+        Q_EMIT connectedChanged();
+    }
+    cancel();
 }

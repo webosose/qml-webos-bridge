@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2019 LG Electronics, Inc.
+// Copyright (c) 2012-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -244,6 +244,7 @@ SettingsService::SettingsService(QObject * parent)
     , m_cacheRead(false)
     , m_connected(false)
 {
+    connect(this, &Service::sessionIdChanged, this, &SettingsService::resetSubscription);
 }
 
 SettingsService::~SettingsService()
@@ -256,7 +257,7 @@ void SettingsService::setAppId(const QString& appId)
     Service::setAppId(appId);
 
     if (m_tokenServerStatusBootd == LSMESSAGE_TOKEN_INVALID)
-        m_tokenServerStatusBootd = registerServerStatus(serviceNameBootd);
+        m_tokenServerStatusBootd = registerServerStatus(serviceNameBootd, false);
     if (m_tokenServerStatusSettings == LSMESSAGE_TOKEN_INVALID)
         m_tokenServerStatusSettings = registerServerStatus(serviceNameSettings);
 }
@@ -273,7 +274,7 @@ void SettingsService::cancel(LSMessageToken token)
 
     // the subscription to registerServerStatus is also cancelled this case, restore it
     if (token == LSMESSAGE_TOKEN_INVALID || token == m_tokenServerStatusBootd)
-        m_tokenServerStatusBootd = registerServerStatus(serviceNameBootd);
+        m_tokenServerStatusBootd = registerServerStatus(serviceNameBootd, false);
     if (token == LSMESSAGE_TOKEN_INVALID || token == m_tokenServerStatusSettings)
         m_tokenServerStatusSettings = registerServerStatus(serviceNameSettings);
 }
@@ -293,7 +294,8 @@ bool SettingsService::subscribeInternal()
 
     m_tokenLocale = call(strURIScheme + serviceNameSettings,
             methodGetSystemSettings,
-            QString(QLatin1String("{\"%1\":%2,\"%3\":[\"%4\"]}")).arg(strSubscribe).arg(strTrue).arg(strKeys).arg(strLocaleInfo));
+            QString(QLatin1String("{\"%1\":%2,\"%3\":[\"%4\"]}")).arg(strSubscribe).arg(strTrue).arg(strKeys).arg(strLocaleInfo),
+            QJSValue(), sessionId());
 
     if (m_tokenLocale == LSMESSAGE_TOKEN_INVALID) {
         qWarning() << "SettingsService: Failed to subscribe to" << strLocaleInfo;
@@ -305,7 +307,8 @@ bool SettingsService::subscribeInternal()
 
     m_tokenSystemSettings = call(strURIScheme + serviceNameSettings,
             methodGetSystemSettings,
-            QString(QLatin1String("{\"%1\":%2,\"%3\":\"%4\",\"%5\":[\"%6\"]}")).arg(strSubscribe).arg(strTrue).arg(strCategory).arg(strOption).arg(strKeys).arg(strScreenRotation));
+            QString(QLatin1String("{\"%1\":%2,\"%3\":\"%4\",\"%5\":[\"%6\"]}")).arg(strSubscribe).arg(strTrue).arg(strCategory).arg(strOption).arg(strKeys).arg(strScreenRotation),
+            QJSValue(), sessionId());
 
     if (m_tokenSystemSettings == LSMESSAGE_TOKEN_INVALID) {
         qWarning() << "SettingsService: Failed to subscribe to" << strScreenRotation;
@@ -341,7 +344,8 @@ bool SettingsService::subscribeBootdInternal()
 
     m_tokenBootd = call(strURIScheme + serviceNameBootd,
             methodGetBootStatus,
-            QString(QLatin1String("{\"%1\":%2}")).arg(strSubscribe).arg(strTrue));
+            QString(QLatin1String("{\"%1\":%2}")).arg(strSubscribe).arg(strTrue),
+            QJSValue(), QString("no-session"));
 
     if (m_tokenBootd == LSMESSAGE_TOKEN_INVALID) {
         qWarning() << "SettingsService: Failed to subscribe to" << methodGetBootStatus;
@@ -437,8 +441,7 @@ void SettingsService::hubError(const QString& method, const QString& error, cons
     if (error == LUNABUS_ERROR_SERVICE_DOWN) {
         if (m_subscriptionRequested) {
             qWarning() << "SettingsService: Hub error:" << error << "- recover subscriptions";
-            cancel();
-            tryToSubscribe();
+            resetSubscription();
         }
     }
 }
@@ -596,6 +599,13 @@ void SettingsService::setBootStatus(const QString& bootStatus)
         m_bootStatus = bootStatus;
         emit bootStatusChanged();
     }
+}
+
+void SettingsService::resetSubscription()
+{
+    qWarning() << __PRETTY_FUNCTION__;
+    m_connected = false;
+    cancel();
 }
 
 #include "settingsservice.moc"

@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2018 LG Electronics, Inc.
+// Copyright (c) 2013-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ NotificationService::NotificationService(QObject * parent)
     , m_inputAlertRequested(false)
     , m_pincodePromptRequested(false)
 {
+    connect(this, &Service::sessionIdChanged, this, &NotificationService::resetSubscription);
 }
 
 void NotificationService::setAppId(const QString& appId)
@@ -47,7 +48,7 @@ void NotificationService::setAppId(const QString& appId)
     Service::setAppId(appId);
 
     if (m_tokenServerStatus == LSMESSAGE_TOKEN_INVALID)
-        m_tokenServerStatus = registerServerStatus(interfaceName());
+        m_tokenServerStatus = registerServerStatus(interfaceName(), true);
 }
 
 void NotificationService::cancel(LSMessageToken token)
@@ -56,7 +57,7 @@ void NotificationService::cancel(LSMessageToken token)
 
     // the subscription to registerServerStatus is also cancelled this case, restore it
     if (token == LSMESSAGE_TOKEN_INVALID || token == m_tokenServerStatus)
-        m_tokenServerStatus = registerServerStatus(interfaceName());
+        m_tokenServerStatus = registerServerStatus(interfaceName(), true);
 }
 
 void NotificationService::initSubscriptionCalls()
@@ -181,12 +182,17 @@ void NotificationService::hubError(const QString& method, const QString& error, 
 
     if (error == LUNABUS_ERROR_SERVICE_DOWN) {
         qWarning() << "NotificationService: Hub error:" << error << "- recover subscriptions";
-        cancel();
-        initSubscriptionCalls();
+        resetSubscription();
     }
 }
 
 QString NotificationService::interfaceName() const
 {
     return QString(serviceName);
+}
+
+void NotificationService::resetSubscription()
+{
+    qWarning() << __PRETTY_FUNCTION__;
+    cancel();
 }

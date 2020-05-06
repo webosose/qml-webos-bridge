@@ -101,8 +101,10 @@ void Service::setRoleType(const QString& roleType)
 
 int Service::call(const QString& service, const QString& method, const QString& payload, const QJSValue& timeout, const QString& sessionId)
 {
-    return callInternal(service, method, payload, timeout,
-                        sessionId.isEmpty() ? m_sessionId : sessionId);
+    QString effectiveSessionId(sessionId.isEmpty() ? m_sessionId: sessionId);
+    if (effectiveSessionId == "no-session")
+        effectiveSessionId = "";
+    return callInternal(service, method, payload, timeout, effectiveSessionId);
 }
 
 int Service::callInternal(const QString& service, const QString& method, const QString & payload, const QJSValue& timeout, const QString& sessionId)
@@ -231,21 +233,21 @@ QString Service::serviceUri() const
     return strURIScheme + interfaceName();
 }
 
-int Service::registerServerStatus(const QString &serviceName)
+int Service::registerServerStatus(const QString &serviceName, bool useSession)
 {
     QJsonObject obj;
     obj.insert(strServiceName, serviceName);
     obj.insert(strSubscribe, true);
-    if (!m_sessionId.isEmpty())
+    if (useSession && !m_sessionId.isEmpty())
         obj.insert(strSessionId, m_sessionId);
     QString params = QJsonDocument(obj).toJson(QJsonDocument::Compact);
     int token = callInternal(QLatin1String("luna://com.webos.service.bus"),
                              QLatin1String("/signal/registerServerStatus"),
                              params, QJSValue(), QString());
     if (token == LSMESSAGE_TOKEN_INVALID)
-        qWarning() << "registerServerStatus failed, serviceName:" << serviceName << "appId:" << m_appId;
+        qWarning() << "registerServerStatus failed, serviceName:" << serviceName << "appId:" << m_appId << "sessionId:" << m_sessionId << "useSession:" << useSession;
     else
-        qInfo() << "registerServerStatus for serviceName:" << serviceName << "appId:" << m_appId << "token:" << token;
+        qInfo() << "registerServerStatus for serviceName:" << serviceName << "appId:" << m_appId << "token:" << token << "sessionId:" << m_sessionId << "useSession:" << useSession;
 
     return token;
 }
@@ -476,9 +478,10 @@ void Service::setCategory(const QString& category)
 
 void Service::setSessionId(const QString& sessionId)
 {
-    Q_ASSERT(m_sessionId.length() == 0);
-    m_sessionId = sessionId;
-    emit sessionIdChanged();
+    if (m_sessionId != sessionId) {
+        m_sessionId = sessionId;
+        emit sessionIdChanged();
+    }
 }
 
 void Service::setCallServiceName(QString& newServiceName) {
