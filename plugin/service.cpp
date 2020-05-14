@@ -379,6 +379,15 @@ bool Service::callbackSubscriptionCancel(LSHandle *lshandle, LSMessage *msg, voi
 
 void Service::pushSubscription(const QString& method, const QString& param, const QString& responseMethod)
 {
+    if (!m_serviceManager)
+        m_serviceManager = LunaServiceManager::instance(m_appId);
+
+    if (!m_serviceManager) {
+        qWarning() << "appId is undefined, ignore this pushSubscription: method=" << method
+                   << ", payload=" << param;
+        return;
+    }
+
     LSHandle *serviceHandle = m_serviceManager->getServiceHandle();
 
     if (!serviceHandle) {
