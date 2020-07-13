@@ -444,6 +444,15 @@ unsigned int Service::subscribersCount(const QString& method)
 
 void Service::registerMethods(const QStringList &methods)
 {
+    if (!m_serviceManager)
+        m_serviceManager = LunaServiceManager::instance(m_appId);
+
+    if (!m_serviceManager) {
+        qWarning() << "appId is undefined, ignore this registerMethods:"
+                   << "methods=" << methods.join(",");
+        return;
+    }
+
     if (m_serviceManager->getClientType() == ApplicationClient)
     {
         qWarning() << "ApplicationClient can't register methods";
