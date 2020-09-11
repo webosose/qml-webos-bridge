@@ -63,6 +63,10 @@ bool message_filter(LSHandle *sh, LSMessage *reply, void *ctx)
     else
         listener->serviceResponse(call.method, QString(payload), token);
 
+    // Remove callInfo for one-reply call
+    if (!call.subscription)
+        listener->callInfos.take(token);
+
     return true;
 }
 } // namespace
