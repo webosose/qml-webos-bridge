@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -177,7 +177,7 @@ void SystemService::serviceResponse( const QString& method, const QString& paylo
         QJsonObject rootObject = QJsonDocument::fromJson(payload.toUtf8()).object();
 
         int systemSeconds = rootObject.find(strUtc).value().toDouble();
-        QDateTime systemTime = QDateTime::fromTime_t(systemSeconds);
+        QDateTime systemTime = QDateTime::fromMSecsSinceEpoch((qint64)systemSeconds * 1000, Qt::LocalTime);
         m_systemTime = systemTime;
         emit systemTimeChanged();
     }
