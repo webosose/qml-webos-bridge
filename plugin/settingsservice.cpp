@@ -64,7 +64,7 @@ public:
         for (int i = 0; i < s_cachedTranslators.size(); i++) {
             WebOSTranslator *wtr = reinterpret_cast<WebOSTranslator*>(s_cachedTranslators.at(i).data());
             if (wtr->isEqualSource(locale, comp, l10n, dir)) {
-                qDebug() << "existed translator: qmDir=" << wtr->qmDir() << ", qmComp=" << wtr->qmComp()
+                qInfo() << "existed translator: qmDir=" << wtr->qmDir() << ", qmComp=" << wtr->qmComp()
                          << ", qmL10n=" << wtr->qmL10n() << ", qmLocale=" << wtr->qmLocale()
                          << ", WebOSTranslator=" << wtr;
                 return true;
@@ -101,8 +101,8 @@ public:
         QList<QSharedPointer<QTranslator>>::iterator it = s_cachedTranslators.begin();
         while (it != s_cachedTranslators.end()) {
             WebOSTranslator *wtr = reinterpret_cast<WebOSTranslator*>(it->data());
-            if (!wtr->isEqualLocale(locale) && wtr->isEqualComp(comp, dir)) {
-                qDebug() << "drop cached translator: qmDir=" << wtr->qmDir() << ", qmComp=" << wtr->qmComp()
+            if (wtr->isEqualComp(comp, dir)) {
+                qInfo() << "drop cached translator: qmDir=" << wtr->qmDir() << ", qmComp=" << wtr->qmComp()
                          << ", qmL10n=" << wtr->qmL10n() << ", qmLocale=" << wtr->qmLocale()
                          << ", WebOSTranslator=" << wtr;
                 it = s_cachedTranslators.erase(it);
