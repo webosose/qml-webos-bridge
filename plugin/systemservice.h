@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -101,10 +101,10 @@ private:
 
     QUrl m_wallpaper;
     QString m_timeFormat;
-    bool m_airplaneMode;
-    bool m_muteSound;
-    bool m_rotationLock;
-    int m_lockTimeout;
+    bool m_airplaneMode = false;
+    bool m_muteSound = false;
+    bool m_rotationLock = false;
+    int m_lockTimeout = 0;
     QDateTime m_systemTime;
 };
 
