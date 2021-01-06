@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2020 LG Electronics, Inc.
+// Copyright (c) 2012-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -506,8 +506,8 @@ void Service::setCallServiceName(QString& newServiceName) {
     if (!newServiceName.startsWith(strURISchemeDeprecated) && !newServiceName.startsWith(strURIScheme)) {
         newServiceName.prepend(strURIScheme);
     }
-    if (!newServiceName.endsWith('/')) {
-        newServiceName.append('/');
+    if (!newServiceName.endsWith(QChar('/'))) {
+        newServiceName.append(QChar('/'));
     }
     m_callServiceName = newServiceName;
 }
