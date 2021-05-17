@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2018 LG Electronics, Inc.
+// Copyright (c) 2013-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import WebOSServices 1.0
 Service {
     id:db8
     property var callbacks: []
-    onResponse: handleResponse(method, payload, token)
+    onResponse: (method, payload, token) => { handleResponse(method, payload, token); }
 
     function handleResponse(method, payload, token)
     {
