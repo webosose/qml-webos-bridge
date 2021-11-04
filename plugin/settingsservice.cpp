@@ -508,6 +508,9 @@ void SettingsService::handleLocaleChange()
             installTranslator(QString(QLatin1String("%1/../%2")).arg(m_l10nDirName).arg(index), index);
         }
     }
+
+    uninstallTranslator(m_l10nDirName + "/resources_0", m_l10nFileNameBase);
+    installTranslator(m_l10nDirName + "/resources_0", m_l10nFileNameBase);
 }
 
 bool SettingsService::findl10nFileName(const QString& dir, const QString& file, QString& rFilename)
