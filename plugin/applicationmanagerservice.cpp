@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2020 LG Electronics, Inc.
+// Copyright (c) 2012-2022 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,11 +48,12 @@ static const QLatin1String methodGetAppLifeEvents("/getAppLifeEvents");
 static const QLatin1String serviceName("com.webos.applicationManager");
 
 ApplicationManagerService::ApplicationManagerService(QObject * parent)
-    : Service(parent)
+    : MessageSpreaderListener(parent)
     , m_connected(false)
     , m_tokenServerStatus(LSMESSAGE_TOKEN_INVALID)
 {
     connect(this, &Service::sessionIdChanged, this, &ApplicationManagerService::resetSubscription);
+    m_spreadEvents = qgetenv("WEBOS_QML_WEBOSSERVICES_SPREAD_EVENTS").split(',').contains("ApplicationManagerService");
 }
 
 void ApplicationManagerService::setAppId(const QString& appId)
@@ -179,12 +180,11 @@ int ApplicationManagerService::subscribeLaunchPointsList()
           QString(QLatin1String("{\"%1\":%2}")).arg(strSubscribe).arg(strTrue));
 }
 
-void ApplicationManagerService::serviceResponse(const QString& method, const QString& payload, int token)
+void ApplicationManagerService::serviceResponseDelayed(const QString& method, const QString& payload, int token, const QJsonObject &rootObject)
 {
-    checkForErrors(payload, token);
+    checkForErrors(rootObject, token);
     Q_EMIT response(method, payload, token);
 
-    QJsonObject rootObject = QJsonDocument::fromJson(payload.toUtf8()).object();
     if (token == m_tokenServerStatus && rootObject.find(strServiceName).value().toString() == interfaceName()) {
         bool connected = rootObject.find(strConnected).value().toBool();
         if (m_connected != connected) {

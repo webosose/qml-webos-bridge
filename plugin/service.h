@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2021 LG Electronics, Inc.
+// Copyright (c) 2012-2022 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@
 #include <QDebug>
 #include <QHash>
 #include <QJSValue>
+#include <QJsonObject>
 #include <QPointer>
 #include <QVariant>
 
@@ -314,6 +315,7 @@ protected:
      * \param token provides the caller's token that is answered by this reply
      */
     void checkForErrors( const QString& payload, int token );
+    void checkForErrors( const QJsonObject& json, int token );
 
 private:
     LunaServiceManager* m_serviceManager;
@@ -334,6 +336,30 @@ private:
                      const QString& payload,
                      const QJSValue& timeout,
                      const QString& sessionId);
+};
+
+class MessageSpreaderListener: public Service
+{
+    Q_OBJECT
+public:
+    MessageSpreaderListener(QObject *parent);
+    virtual ~MessageSpreaderListener();
+
+public slots:
+    void serviceResponseSlot(const QString& method, const QString& payload, int token, const QJsonObject &jsonPayload);
+
+signals:
+    void serviceResponseSignal(const QString& method, const QString& payload, int token, const QJsonObject &jsonPayload);
+
+protected:
+    void serviceResponse(const QString& method, const QString& payload, int token) override final;
+    // TODO: Consider this interface moves into LunaServiceManagerListener
+    virtual void serviceResponseDelayed(const QString& method, const QString& payload, int token, const QJsonObject &jsonPayload) = 0;
+    bool m_spreadEvents = false;
+
+private:
+    friend class MessageSpreader;
+    size_t m_handle = 0;
 };
 
 #endif // SERVICE_H

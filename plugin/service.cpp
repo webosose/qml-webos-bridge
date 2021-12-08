@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2021 LG Electronics, Inc.
+// Copyright (c) 2012-2022 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,9 +23,37 @@
 #include <QGuiApplication>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QThread>
+#include <QMutex>
+#include <QQueue>
+#include <QJsonObject>
 
 #include "lunaservicemgr.h"
 #include "LSUtils.h"
+
+class MessageSpreader: public QThread
+{
+public:
+    static MessageSpreader *instance();
+    ~MessageSpreader();
+    void removeListener(MessageSpreaderListener *listener);
+    void pushMessageResponse(MessageSpreaderListener *listener, const QString& method, const QString& payload, int token);
+
+    struct Response
+    {
+        QString method;
+        QString payload;
+        int token = 0;
+        MessageSpreaderListener *listener = nullptr;
+        size_t listenerHandle = 0;
+    };
+
+private:
+    void run() override;
+    QMutex m_mutex;
+    QSet<size_t> m_listeners;
+    QQueue<Response> m_responses;
+};
 
 const QLatin1String Service::strURIScheme("luna://");
 const QLatin1String Service::strURISchemeDeprecated("palm://");
@@ -202,12 +230,10 @@ void Service::hubError(const QString& method, const QString& error, const QStrin
     checkForErrors(payload, token);
 }
 
-void Service::checkForErrors(const QString& payload, int token)
+void Service::checkForErrors(const QJsonObject& rootObject, int token)
 {
     int errorCode = 0;
     QString errorText;
-
-    QJsonObject rootObject = QJsonDocument::fromJson(payload.toUtf8()).object();
 
     //by API convention errorCode is missing instead being set to zero
     if (!rootObject.contains(strErrorCode)) {
@@ -221,6 +247,11 @@ void Service::checkForErrors(const QString& payload, int token)
     qWarning() << "Error response for token:" << token << errorCode << errorText;
 
     Q_EMIT error(errorCode, errorText, token);
+}
+
+void Service::checkForErrors(const QString& payload, int token)
+{
+    checkForErrors(QJsonDocument::fromJson(payload.toUtf8()).object(), token);
 }
 
 QString Service::interfaceName() const
@@ -510,4 +541,89 @@ void Service::setCallServiceName(QString& newServiceName) {
         newServiceName.append(QChar('/'));
     }
     m_callServiceName = newServiceName;
+}
+
+static QSharedPointer<MessageSpreader> s_messageSpreader;
+
+MessageSpreader *MessageSpreader::instance()
+{
+    if (!s_messageSpreader.get())
+        s_messageSpreader.reset(new MessageSpreader());
+    return s_messageSpreader.get();
+}
+
+MessageSpreader::~MessageSpreader()
+{
+    QThread::wait();
+}
+
+void MessageSpreader::removeListener(MessageSpreaderListener *listener)
+{
+    QMutexLocker locker(&m_mutex);
+    m_listeners.remove(listener->m_handle);
+}
+
+void MessageSpreader::pushMessageResponse(MessageSpreaderListener *listener, const QString& method, const QString& payload, int token)
+{
+    Response response;
+    response.method = method;
+    response.listenerHandle = listener->m_handle;
+    response.payload = payload;
+    response.token = token;
+    response.listener = listener;
+
+    QMutexLocker locker(&m_mutex);
+    m_responses.enqueue(response);
+    m_listeners.insert(response.listenerHandle);
+
+    QThread::start();
+}
+
+void MessageSpreader::run()
+{
+    Response response;
+    while (true) {
+        {
+            QMutexLocker locker(&m_mutex);
+            if (m_responses.empty())
+                return;
+            response = m_responses.dequeue();
+            if (m_listeners.contains(response.listenerHandle)) {
+                const QJsonObject &jsonPayload = QJsonDocument::fromJson(response.payload.toUtf8()).object();
+                emit response.listener->serviceResponseSignal(response.method, response.payload, response.token, jsonPayload);
+            }
+        }
+        QThread::msleep(100);
+   }
+}
+
+MessageSpreaderListener::MessageSpreaderListener(QObject *parent)
+    :Service(parent)
+{
+    static size_t s_handle = 0;
+    m_handle = ++s_handle;
+
+    connect(this, &MessageSpreaderListener::serviceResponseSignal,
+            this, &MessageSpreaderListener::serviceResponseSlot);
+}
+
+MessageSpreaderListener::~MessageSpreaderListener()
+{
+    MessageSpreader::instance()->removeListener(this);
+}
+
+void MessageSpreaderListener::serviceResponse(const QString& method, const QString& payload, int token)
+{
+    if (m_spreadEvents) {
+        // TODO: Consider spread response automatically when service reply with heavy payload(payload.size() is greater than some threshold)
+        MessageSpreader::instance()->pushMessageResponse(this, method, payload, token);
+    } else {
+        const QJsonObject &jsonPayload = QJsonDocument::fromJson(payload.toUtf8()).object();
+        serviceResponseDelayed(method, payload, token, jsonPayload);
+    }
+}
+
+void MessageSpreaderListener::serviceResponseSlot(const QString& method, const QString& payload, int token, const QJsonObject &jsonPayload)
+{
+    serviceResponseDelayed(method, payload, token, jsonPayload);
 }

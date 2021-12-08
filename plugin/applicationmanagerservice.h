@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2020 LG Electronics, Inc.
+// Copyright (c) 2012-2022 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@
      * \see Service
      */
 
-class ApplicationManagerService : public Service
+class ApplicationManagerService : public MessageSpreaderListener
 {
     Q_OBJECT
 
@@ -101,7 +101,7 @@ protected:
      * \param token Provides the caller's token that is answered
      * by this reply
      */
-    void serviceResponse(const QString& method, const QString& payload, int token);
+    void serviceResponseDelayed(const QString& method, const QString& payload, int token, const QJsonObject &jsonPayload) override;
 
     void hubError(const QString& method, const QString& error, const QString& payload, int token);
 

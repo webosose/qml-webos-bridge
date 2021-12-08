@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2020 LG Electronics, Inc.
+// Copyright (c) 2012-2022 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -232,7 +232,7 @@ private:
 };
 
 SettingsService::SettingsService(QObject * parent)
-    : Service(parent)
+    : MessageSpreaderListener(parent)
     , m_cached(false)
     , m_tokenServerStatusBootd(LSMESSAGE_TOKEN_INVALID)
     , m_tokenServerStatusSettings(LSMESSAGE_TOKEN_INVALID)
@@ -245,6 +245,7 @@ SettingsService::SettingsService(QObject * parent)
     , m_connected(false)
 {
     connect(this, &Service::sessionIdChanged, this, &SettingsService::resetSubscription);
+    m_spreadEvents = qgetenv("WEBOS_QML_WEBOSSERVICES_SPREAD_EVENTS").split(',').contains("SettingsService");
 }
 
 SettingsService::~SettingsService()
@@ -355,12 +356,11 @@ bool SettingsService::subscribeBootdInternal()
     return true;
 }
 
-void SettingsService::serviceResponse(const QString& method, const QString& payload, int token)
+void SettingsService::serviceResponseDelayed(const QString& method, const QString& payload, int token, const QJsonObject &rootObject)
 {
-    checkForErrors(payload, token);
+    checkForErrors(rootObject, token);
     emit response(method, payload, token);
 
-    QJsonObject rootObject = QJsonDocument::fromJson(payload.toUtf8()).object();
     if (token == m_tokenServerStatusBootd && rootObject.find(strServiceName).value().toString() == serviceNameBootd) {
         bool connected = rootObject.find(strConnected).value().toBool();
         if (connected)
