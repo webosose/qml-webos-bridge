@@ -360,6 +360,7 @@ protected:
 private:
     friend class MessageSpreader;
     size_t m_handle = 0;
+    bool m_emitted = false;
 };
 
 #endif // SERVICE_H

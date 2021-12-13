@@ -27,6 +27,7 @@
 #include <QMutex>
 #include <QQueue>
 #include <QJsonObject>
+#include <QSemaphore>
 
 #include "lunaservicemgr.h"
 #include "LSUtils.h"
@@ -35,9 +36,11 @@ class MessageSpreader: public QThread
 {
 public:
     static MessageSpreader *instance();
+    MessageSpreader();
     ~MessageSpreader();
     void removeListener(MessageSpreaderListener *listener);
     void pushMessageResponse(MessageSpreaderListener *listener, const QString& method, const QString& payload, int token);
+    void messageResponded(MessageSpreaderListener *listener);
 
     struct Response
     {
@@ -50,9 +53,12 @@ public:
 
 private:
     void run() override;
+    void messageRespondedInternal(MessageSpreaderListener *listener);
     QMutex m_mutex;
     QSet<size_t> m_listeners;
     QQueue<Response> m_responses;
+    QSemaphore m_semaphore;
+    int m_postSleepMs = 0;
 };
 
 const QLatin1String Service::strURIScheme("luna://");
@@ -552,6 +558,11 @@ MessageSpreader *MessageSpreader::instance()
     return s_messageSpreader.get();
 }
 
+MessageSpreader::MessageSpreader()
+{
+    m_postSleepMs = qgetenv("WEBOS_QML_WEBOSSERVICES_SPREAD_EVENTS_WAIT_AFTER_RESPONSE").toInt();
+}
+
 MessageSpreader::~MessageSpreader()
 {
     QThread::wait();
@@ -561,6 +572,21 @@ void MessageSpreader::removeListener(MessageSpreaderListener *listener)
 {
     QMutexLocker locker(&m_mutex);
     m_listeners.remove(listener->m_handle);
+    messageRespondedInternal(listener);
+}
+
+void MessageSpreader::messageResponded(MessageSpreaderListener *listener)
+{
+    QMutexLocker locker(&m_mutex);
+    messageRespondedInternal(listener);
+}
+
+void MessageSpreader::messageRespondedInternal(MessageSpreaderListener *listener)
+{
+    if (listener->m_emitted) {
+        listener->m_emitted = false;
+        m_semaphore.release();
+    }
 }
 
 void MessageSpreader::pushMessageResponse(MessageSpreaderListener *listener, const QString& method, const QString& payload, int token)
@@ -583,18 +609,23 @@ void MessageSpreader::run()
 {
     Response response;
     while (true) {
+        bool emitted = false;
         {
             QMutexLocker locker(&m_mutex);
             if (m_responses.empty())
                 return;
             response = m_responses.dequeue();
             if (m_listeners.contains(response.listenerHandle)) {
+                response.listener->m_emitted = emitted = true;
                 const QJsonObject &jsonPayload = QJsonDocument::fromJson(response.payload.toUtf8()).object();
                 emit response.listener->serviceResponseSignal(response.method, response.payload, response.token, jsonPayload);
             }
         }
-        QThread::msleep(100);
-   }
+        if (emitted) {
+            m_semaphore.acquire();
+            QThread::msleep(m_postSleepMs);
+        }
+    }
 }
 
 MessageSpreaderListener::MessageSpreaderListener(QObject *parent)
@@ -626,4 +657,5 @@ void MessageSpreaderListener::serviceResponse(const QString& method, const QStri
 void MessageSpreaderListener::serviceResponseSlot(const QString& method, const QString& payload, int token, const QJsonObject &jsonPayload)
 {
     serviceResponseDelayed(method, payload, token, jsonPayload);
+    MessageSpreader::instance()->messageResponded(this);
 }
