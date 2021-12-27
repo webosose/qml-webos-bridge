@@ -1,4 +1,4 @@
-// Copyright (c) 2013-2018 LG Electronics, Inc.
+// Copyright (c) 2013-2022 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 function load() {
     listModel.clear();
-    var jsonObject = JSON.parse(listModel.source);
+    var jsonObject = listModel.jsonSource;
     var apps = jsonObject.apps
     for (var app in apps) {
         // Provide the file scheme to the icon for reliable loading of the icon. Without

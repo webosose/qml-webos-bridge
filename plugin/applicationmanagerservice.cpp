@@ -126,16 +126,6 @@ int ApplicationManagerService::moveLaunchPoint(int index, int to)
           QString(QLatin1String("{ \"index\": %1, \"to\": %2 }")).arg(index).arg(to));
 }
 
-QString ApplicationManagerService::applicationList()
-{
-    return m_applicationList;
-}
-
-QString ApplicationManagerService::launchPointsList()
-{
-    return m_launchPointsList;
-}
-
 QString ApplicationManagerService::runningList()
 {
     call(serviceUri(),
@@ -193,9 +183,11 @@ void ApplicationManagerService::serviceResponseDelayed(const QString& method, co
         }
     }
     else if (method == methodListApps) {
-         if (payload == m_applicationList) return;
-         m_applicationList = payload;
-         Q_EMIT(applicationListChanged());
+        if (payload == m_applicationList) return;
+        m_applicationList = payload;
+        m_jsonApplicationList = QVariant(rootObject);
+        Q_EMIT(applicationListChanged());
+        Q_EMIT(jsonApplicationListChanged());
     }
     else if (method == methodListLaunchPoints) {
         if ( payload == m_launchPointsList ) {
@@ -203,7 +195,9 @@ void ApplicationManagerService::serviceResponseDelayed(const QString& method, co
             return;
         }
         m_launchPointsList = payload;
+        m_jsonLaunchPointsList = QVariant(rootObject);
         Q_EMIT(launchPointsListChanged());
+        Q_EMIT(jsonLaunchPointsListChanged());
     }
     else if (method == methodRunning) {
         if (payload == m_runningList) return;

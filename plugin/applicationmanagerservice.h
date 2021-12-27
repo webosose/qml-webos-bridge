@@ -20,6 +20,7 @@
 #include "service.h"
 #include <QUrl>
 #include <QHash>
+#include <QVariant>
 
     /*!
      * \class ApplicationManagerService
@@ -42,6 +43,8 @@ class ApplicationManagerService : public MessageSpreaderListener
     Q_PROPERTY(QString launchPointsList READ launchPointsList NOTIFY launchPointsListChanged)
     Q_PROPERTY(QString runningList READ runningList NOTIFY runningListChanged)
     Q_PROPERTY(bool connected READ connected NOTIFY connectedChanged)
+    Q_PROPERTY(QVariant jsonApplicationList READ jsonApplicationList NOTIFY jsonApplicationListChanged)
+    Q_PROPERTY(QVariant jsonLaunchPointsList READ jsonLaunchPointsList NOTIFY jsonLaunchPointsListChanged)
 
 Q_SIGNALS:
     /*!
@@ -57,7 +60,9 @@ Q_SIGNALS:
     void appLifeEventsChanged(const QString& appId, const QString& event, const QString& title, bool showSpinner, bool showSplash, const QString& splashBackground);
 
     void applicationListChanged();
+    void jsonApplicationListChanged();
     void launchPointsListChanged();
+    void jsonLaunchPointsListChanged();
     void runningListChanged();
     void connectedChanged();
     void sameLaunchPointsListPublished();
@@ -84,8 +89,10 @@ public:
 
     void setAppId(const QString& appId);
 
-    QString applicationList();
-    QString launchPointsList();
+    QString applicationList() { return m_applicationList; };
+    QVariant jsonApplicationList() { return m_jsonApplicationList; };
+    QString launchPointsList() { return m_launchPointsList; };
+    QVariant jsonLaunchPointsList() { return m_jsonLaunchPointsList; };
     QString runningList();
     bool connected() { return m_connected; }
 
@@ -112,7 +119,9 @@ private:
     bool m_connected;
     LSMessageToken m_tokenServerStatus;
     QString m_applicationList;
+    QVariant m_jsonApplicationList;
     QString m_launchPointsList;
+    QVariant m_jsonLaunchPointsList;
     QString m_runningList;
     QHash<int, QString> m_launchCalls;
     QHash<int, QString> m_closeCalls;

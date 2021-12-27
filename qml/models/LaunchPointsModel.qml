@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2018 LG Electronics, Inc.
+// Copyright (c) 2012-2022 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import PmLog 1.0
 ListModel {
     id: listModel
     property string appId
-    property variant applicationManagerService: ApplicationManagerService {
+    property var applicationManagerService: ApplicationManagerService {
         appId: listModel.appId
         property bool ready: connected && db8.didReadAppOrder
 
@@ -35,7 +35,7 @@ ListModel {
         }
 
         onSameLaunchPointsListPublished: {
-            var res = JSON.parse(listModel.source);
+            var res = listModel.jsonSource;
             if (res.caseDetail !== undefined && res.caseDetail.change !== undefined && res.caseDetail.change.indexOf(updateAppsInSameListsAt) !== -1) {
                 console.log("update contents of the appList with given same app lists when res.caseDetail.changes includes updateAppsInSameListsAt");
                 appList = filter && res.launchPoints.filter(filter) || res.launchPoints;
@@ -45,6 +45,7 @@ ListModel {
     }
 
     property string source: applicationManagerService.launchPointsList
+    property var jsonSource: applicationManagerService.jsonLaunchPointsList
 
     property int status: ServiceModel.Null
 
@@ -174,13 +175,6 @@ ListModel {
     function removeLaunchPoint(index) {
         remove(index);
         applicationManagerService.removeLaunchPoint(get(index).launchPointId);
-    }
-
-    function refreshLaunchPoints() { //GN
-        console.log("----- Force refresh LaunchPoints list -----");
-        var newSource = applicationManagerService.launchPointsList;
-        if (newSource !== source)
-            source = newSource;
     }
 
     function commitAppOrder(useredit) {
@@ -347,8 +341,8 @@ ListModel {
         return pos;
     }
 
-    onSourceChanged: {
-        var res = JSON.parse(listModel.source);
+    onJsonSourceChanged: {
+        var res = listModel.jsonSource;
         var updateByLocaleChanged = false;
         var updateByAppTitleChanged = false;
 
