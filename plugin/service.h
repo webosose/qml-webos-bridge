@@ -356,6 +356,7 @@ protected:
     // TODO: Consider this interface moves into LunaServiceManagerListener
     virtual void serviceResponseDelayed(const QString& method, const QString& payload, int token, const QJsonObject &jsonPayload) = 0;
     bool m_spreadEvents = false;
+    QStringList m_spreadMethods = {};
 
 private:
     friend class MessageSpreader;

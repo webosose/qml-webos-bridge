@@ -634,6 +634,8 @@ MessageSpreaderListener::MessageSpreaderListener(QObject *parent)
     static size_t s_handle = 0;
     m_handle = ++s_handle;
 
+    m_spreadMethods = QString(qgetenv("WEBOS_QML_WEBOSSERVICES_SPREAD_METHODS")).split(',');
+
     connect(this, &MessageSpreaderListener::serviceResponseSignal,
             this, &MessageSpreaderListener::serviceResponseSlot);
 }
@@ -645,7 +647,7 @@ MessageSpreaderListener::~MessageSpreaderListener()
 
 void MessageSpreaderListener::serviceResponse(const QString& method, const QString& payload, int token)
 {
-    if (m_spreadEvents) {
+    if (m_spreadEvents && m_spreadMethods.contains(method)) {
         // TODO: Consider spread response automatically when service reply with heavy payload(payload.size() is greater than some threshold)
         MessageSpreader::instance()->pushMessageResponse(this, method, payload, token);
     } else {
