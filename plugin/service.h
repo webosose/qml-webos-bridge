@@ -103,6 +103,12 @@ public:
                           const QJSValue& timeout = QJSValue(),
                           const QString& sessionId = QLatin1String(""));
 
+    Q_INVOKABLE int callForApplication( const QString& appId,
+                                        const QString& service,
+                                        const QString& method,
+                                        const QString& payload = QLatin1String("{}"),
+                                        const QJSValue& timeout = QJSValue());
+
     /*!
      * \brief Call to service bus using service and method properties.
      * \param payload The Javascript object to use as the method call parameters.

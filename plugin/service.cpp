@@ -173,6 +173,37 @@ int Service::callInternal(const QString& service, const QString& method, const Q
     return token;
 }
 
+int Service::callForApplication(const QString& appId, const QString& service, const QString& method, const QString& payload, const QJSValue& timeout)
+{
+    if (QGuiApplication::arguments().contains(QStringLiteral("criu_enable")) && m_appId.isEmpty()) {
+        qWarning() << "Disallow to register service status for empty appId on criu_enable";
+        return LSMESSAGE_TOKEN_INVALID;
+    }
+
+    if (!m_serviceManager)
+        m_serviceManager = LunaServiceManager::instance(m_appId);
+
+    if (!m_serviceManager) return 0;
+
+    auto token = m_serviceManager->callForApplication(service,
+                                   method,
+                                   payload,
+                                   appId,
+                                   this);
+
+    if (token != LSMESSAGE_TOKEN_INVALID) {
+        if (timeout.isNumber()) {
+            m_serviceManager->setTimeout(token, timeout.toUInt());
+        } else {
+            bool isUndefined = timeout.isUndefined();
+            if (!isUndefined)
+                qWarning("Only integers are accepted to timeout parameter of Service::call.");
+        }
+    }
+
+    return token;
+}
+
 int Service::callService(const QVariantMap& payload)
 {
     return call(m_callServiceName, m_callServiceMethod, QJsonDocument::fromVariant(payload).toJson(QJsonDocument::Compact));

@@ -301,6 +301,68 @@ LSMessageToken LunaServiceManager::call( const QString& service, const QString& 
     return token;
 }
 
+LSMessageToken LunaServiceManager::callForApplication(const QString& service, const QString& method, const QString& payload,
+    const QString& appId, LunaServiceManagerListener* inListener)
+{
+    if (m_clientType == ApplicationClient || m_roleType == "regular") {
+        qWarning() << "Cannot call for" << service << method << "due to invalid permission for appId" << m_appId;
+        return LSMESSAGE_TOKEN_INVALID;
+    }
+
+    LSHandle *serviceHandle = getServiceHandle();
+
+    if (!serviceHandle) {
+        qWarning() << "Unable to invoke call for" << service << method << "due to invalid handle for appId" << m_appId;
+        return LSMESSAGE_TOKEN_INVALID;
+    }
+
+    bool retVal;
+    LSErrorSafe lserror;
+    LSMessageToken token = LSMESSAGE_TOKEN_INVALID;
+    CallInfo call = {QString(), false};
+
+    if (m_appId.isEmpty())
+        qWarning() << "Application ID hasn't been set.";
+
+    void *key = inListener;
+    LSFilterFunc callback = NULL;
+    if (key) {
+        s_callbackContext[key] = QPointer<LunaServiceManagerListener>(inListener);
+        callback = message_filter;
+    }
+
+    QJsonObject obj = QJsonDocument::fromJson(payload.toUtf8()).object();
+    if (obj[strSubscribe].toBool() || obj[strWatch].toBool()) {
+        call.subscription = true;
+        retVal = LSCallFromApplication(serviceHandle, (service + method).toUtf8().data(),
+                                       payload.toUtf8().data(), appId.toUtf8().data(),
+                                       callback, key, &token, &lserror);
+    } else {
+        retVal = LSCallFromApplicationOneReply(serviceHandle, (service + method).toUtf8().data(),
+                                               payload.toUtf8().data(), appId.toUtf8().data(),
+                                               callback, key, &token, &lserror);
+    }
+
+    if (!retVal) {
+        qWarning("LSCall %s%s failed for (%s, %s), ERROR %d: %s (%s @ %s:%d)",
+                service.toLatin1().constData(),
+                method.toLatin1().constData(),
+                m_appId.toLatin1().constData(),
+                appId.toLatin1().constData(),
+                lserror.error_code, lserror.message,
+                lserror.func, lserror.file, lserror.line);
+
+        return LSMESSAGE_TOKEN_INVALID;
+    }
+
+    if (inListener) {
+        call.method = method;
+        inListener->callInfos[token] = call;
+    }
+
+    return token;
+}
+
 void LunaServiceManager::cancelInternal(LSHandle *sh, LSMessageToken token)
 {
     LSErrorSafe lserror;

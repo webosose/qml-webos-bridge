@@ -115,6 +115,12 @@ public:
                         LunaServiceManagerListener * listener,
                         const QString& sessionId = QLatin1String(""));
 
+    LSMessageToken callForApplication(const QString& service,
+                                      const QString& method,
+                                      const QString& payload,
+                                      const QString& appId,
+                                      LunaServiceManagerListener * listener);
+
     /*!
      * \brief Terminates a call causing any subscription for
      * responses to end.
