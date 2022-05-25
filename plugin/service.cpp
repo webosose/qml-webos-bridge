@@ -78,6 +78,8 @@ const QLatin1String Service::strConnected("connected");
 const QLatin1String Service::strTrue("true");
 const QLatin1String Service::strFalse("false");
 const QLatin1String Service::strSessionId("sessionId");
+const QLatin1String Service::strPayload("payload");
+const QLatin1String Service::strCallerId("callerId");
 
 Service::Service(QObject * parent)
     : LunaServiceManagerListener(parent)
@@ -357,6 +359,15 @@ bool Service::callback(LSHandle *lshandle, LSMessage *msg, void *user_data)
 #ifdef USE_LUNA_SERVICE2_SESSION_API
     QString sessionId(LSMessageGetSessionId(msg));
 #endif
+    QString callerId = "";
+
+    if (s->needToKnowCaller()) {
+        if (LSMessageGetApplicationID(msg))
+            callerId = LSMessageGetApplicationID(msg);
+        else if (LSMessageGetSenderServiceName(msg))
+            callerId = LSMessageGetSenderServiceName(msg);
+    }
+
     bool success = false;
 
     QJsonObject returnObject;
@@ -388,9 +399,19 @@ bool Service::callback(LSHandle *lshandle, LSMessage *msg, void *user_data)
     }
 
     QVariant returnedValue;
-    bool retVal = QMetaObject::invokeMethod(const_cast<Service*>(s), method.toUtf8().constData(),
-                                            Q_RETURN_ARG(QVariant, returnedValue),
-                                            Q_ARG(QVariant, QVariant::fromValue(message)));
+    bool retVal;
+    if (s->needToKnowCaller()) {
+        QJsonObject param;
+        param.insert(strPayload, message);
+        param.insert(strCallerId, callerId);
+        retVal = QMetaObject::invokeMethod(const_cast<Service*>(s), method.toUtf8().constData(),
+                                                Q_RETURN_ARG(QVariant, returnedValue),
+                                                Q_ARG(QVariant, QVariant::fromValue(param)));
+    } else {
+        retVal = QMetaObject::invokeMethod(const_cast<Service*>(s), method.toUtf8().constData(),
+                                                Q_RETURN_ARG(QVariant, returnedValue),
+                                                Q_ARG(QVariant, QVariant::fromValue(message)));
+    }
 
     QJsonObject retObj = QJsonDocument::fromJson(returnedValue.toString().toUtf8()).object();
     if (!retObj.contains(strErrorCode)) {
@@ -568,6 +589,15 @@ void Service::setSessionId(const QString& sessionId)
         m_sessionId = sessionId;
         emit sessionIdChanged();
     }
+}
+
+void Service::setNeedToKnowCaller(bool enable)
+{
+    if (m_needToKnowCaller != enable) {
+        m_needToKnowCaller = enable;
+        qInfo() << "Set needToKnowCaller to " << m_needToKnowCaller;
+    }
+    emit needToKnowCallerChanged();
 }
 
 void Service::setCallServiceName(QString& newServiceName) {

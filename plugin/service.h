@@ -72,6 +72,8 @@ class Service : public LunaServiceManagerListener
      */
     Q_PROPERTY(QString method WRITE setCallMethodName READ callMethodName NOTIFY callMethodChanged)
 
+    Q_PROPERTY(bool needToKnowCaller MEMBER m_needToKnowCaller WRITE setNeedToKnowCaller READ needToKnowCaller NOTIFY needToKnowCallerChanged)
+
 public:
     Service (QObject * parent = 0);
     virtual ~Service();
@@ -80,6 +82,8 @@ public:
     QString callServiceName() { return m_callServiceName; }
     void setCallMethodName(QString& newMethodName) { m_callServiceMethod = newMethodName; }
     QString callMethodName() { return m_callServiceMethod; }
+    void setNeedToKnowCaller(bool enable);
+    bool needToKnowCaller() { return m_needToKnowCaller; }
 
     /*!
      * \brief The most basic service request associated with a certain
@@ -175,6 +179,8 @@ public:
     static const QLatin1String strTrue;
     static const QLatin1String strFalse;
     static const QLatin1String strSessionId;
+    static const QLatin1String strPayload;
+    static const QLatin1String strCallerId;
 
 public slots:
     /*!
@@ -298,6 +304,7 @@ Q_SIGNALS:
     void methodsChanged();
     void categoryChanged();
     void sessionIdChanged();
+    void needToKnowCallerChanged();
     void callServiceChanged();
     void callMethodChanged();
 
@@ -335,6 +342,8 @@ private:
     QString m_callServiceMethod;
 
     ClientType m_clientType;
+
+    bool m_needToKnowCaller = false;
 
     void registerMethods(const QStringList &methods);
     int callInternal(const QString& service,
