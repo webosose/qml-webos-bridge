@@ -138,16 +138,16 @@ void NotificationService::serviceResponse(const QString& method, const QString& 
     qDebug() << "Notification Service Response " << method << payload << token;
     QJsonObject rootObject = QJsonDocument::fromJson(payload.toUtf8()).object();
 
-    if (token == m_tokenServerStatus && rootObject.find(strServiceName).value().toString() == interfaceName()) {
-        bool connected = rootObject.find(strConnected).value().toBool();
+    if (token == m_tokenServerStatus && rootObject.value(strServiceName).toString() == interfaceName()) {
+        bool connected = rootObject.value(strConnected).toBool();
         if (connected) {
             initSubscriptionCalls();
             return;
         }
     }
-    bool subscribedValue = rootObject.find(strSubscribed).value().toBool();
-    bool returnValue =  rootObject.find(strReturnValue).value().toBool() ||
-                       !rootObject.find(strMessage).value().toString().isEmpty();
+    bool subscribedValue = rootObject.value(strSubscribed).toBool();
+    bool returnValue =  rootObject.value(strReturnValue).toBool() ||
+                       !rootObject.value(strMessage).toString().isEmpty();
 
     if (subscribedValue || returnValue == false) {
         return; //Ignore the subscription confirmation response

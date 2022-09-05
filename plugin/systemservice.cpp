@@ -145,10 +145,10 @@ void SystemService::serviceResponse( const QString& method, const QString& paylo
         }
 
         // TODO: Needs refactoring (queueing, call tracking)
-        QString key = rootObject.begin().key();
-        QJsonValue value = rootObject.begin().value();
+        QString key = rootObject.empty() ? "" : rootObject.begin().key();
+        QJsonValue value = rootObject.empty() ? QJsonValue(QJsonValue::Undefined) : rootObject.begin().value();
 
-        if ( key == strWallPaper) { QString wallpaper = value.toObject().find(strWallPaperFile).value().toString();
+        if ( key == strWallPaper) { QString wallpaper = value.toObject().value(strWallPaperFile).toString();
                                            if (m_wallpaper == wallpaper) return;
                                            m_wallpaper = QUrl(wallpaper);
                                            emit wallpaperChanged(); }
@@ -176,7 +176,7 @@ void SystemService::serviceResponse( const QString& method, const QString& paylo
     else if ( method == methodTimeGetSystemTime ) {
         QJsonObject rootObject = QJsonDocument::fromJson(payload.toUtf8()).object();
 
-        int systemSeconds = rootObject.find(strUtc).value().toDouble();
+        int systemSeconds = rootObject.value(strUtc).toDouble();
         QDateTime systemTime = QDateTime::fromMSecsSinceEpoch((qint64)systemSeconds * 1000, Qt::LocalTime);
         m_systemTime = systemTime;
         emit systemTimeChanged();

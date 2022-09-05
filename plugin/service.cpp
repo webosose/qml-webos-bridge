@@ -247,8 +247,8 @@ void Service::checkForErrors(const QJsonObject& rootObject, int token)
         return;
     }
 
-    errorCode = rootObject.find(strErrorCode).value().toInt();
-    errorText = rootObject.find(strErrorText).value().toString();
+    errorCode = rootObject.value(strErrorCode).toInt();
+    errorText = rootObject.value(strErrorText).toString();
 
     qWarning() << "Error response for token:" << token << errorCode << errorText;
 

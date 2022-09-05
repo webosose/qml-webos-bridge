@@ -175,8 +175,8 @@ void ApplicationManagerService::serviceResponseDelayed(const QString& method, co
     checkForErrors(rootObject, token);
     Q_EMIT response(method, payload, token);
 
-    if (token == m_tokenServerStatus && rootObject.find(strServiceName).value().toString() == interfaceName()) {
-        bool connected = rootObject.find(strConnected).value().toBool();
+    if (token == m_tokenServerStatus && rootObject.value(strServiceName).toString() == interfaceName()) {
+        bool connected = rootObject.value(strConnected).toBool();
         if (m_connected != connected) {
             m_connected = connected;
             Q_EMIT connectedChanged();
@@ -205,38 +205,38 @@ void ApplicationManagerService::serviceResponseDelayed(const QString& method, co
         Q_EMIT(runningListChanged());
     }
     else if (method == methodLaunch) {
-        bool returnValue = rootObject.find(strReturnValue).value().toBool();
+        bool returnValue = rootObject.value(strReturnValue).toBool();
         QString identifier = m_launchCalls.value(token);
         if (returnValue == true) {
             Q_EMIT(launched(identifier, token));
         } else {
-            int errorCode = rootObject.find(strErrorCode).value().toInt();
+            int errorCode = rootObject.value(strErrorCode).toInt();
             Q_EMIT(launchFailed(identifier, token, errorCode));
         }
     }
     else if (method == methodClose) {
-        bool returnValue = rootObject.find(strReturnValue).value().toBool();
+        bool returnValue = rootObject.value(strReturnValue).toBool();
         QString processId = m_closeCalls.value(token);
         if (returnValue == true) {
             Q_EMIT(closed(processId, token));
         }
     }
     else if (method == methodOnLaunch) {
-        QString appId = rootObject.find(strAppId).value().toString();
+        QString appId = rootObject.value(strAppId).toString();
         if (!appId.isEmpty()) {
-            QString title = rootObject.find(strTitle).value().toString();
-            bool noSplash = rootObject.find(strNoSplash).value().toBool();
-            QString splashBackground = rootObject.find(strSplashBackGround).value().toString();
+            QString title = rootObject.value(strTitle).toString();
+            bool noSplash = rootObject.value(strNoSplash).toBool();
+            QString splashBackground = rootObject.value(strSplashBackGround).toString();
             Q_EMIT(appLaunched(appId, title, noSplash, splashBackground));
         }
     }
     else if (method == methodGetAppLifeStatus) {
-        QString appId = rootObject.find(strAppId).value().toString();
+        QString appId = rootObject.value(strAppId).toString();
         if (!appId.isEmpty()) {
-            QString status = rootObject.find(strStatus).value().toString();
-            QString processId = rootObject.find(strProcessId).value().toString();
+            QString status = rootObject.value(strStatus).toString();
+            QString processId = rootObject.value(strProcessId).toString();
             QString extraInfo;
-            QJsonObject extraInfoObject = rootObject.find(strExtraInfo).value().toObject();
+            QJsonObject extraInfoObject = rootObject.value(strExtraInfo).toObject();
             if (!extraInfoObject.isEmpty()) {
                 QJsonDocument doc(extraInfoObject);
                 extraInfo = doc.toJson(QJsonDocument::Compact);
@@ -245,13 +245,13 @@ void ApplicationManagerService::serviceResponseDelayed(const QString& method, co
         }
     }
     else if (method == methodGetAppLifeEvents) {
-        QString appId = rootObject.find(strAppId).value().toString();
+        QString appId = rootObject.value(strAppId).toString();
         if (!appId.isEmpty()) {
-            QString event = rootObject.find(strEvent).value().toString();
-            QString title = rootObject.find(strTitle).value().toString();
-            bool showSpinner = rootObject.find(strShowSpinner).value().toBool();
-            bool showSplash = rootObject.find(strShowSplash).value().toBool();
-            QString splashBackground = rootObject.find(strSplashBackGround).value().toString();
+            QString event = rootObject.value(strEvent).toString();
+            QString title = rootObject.value(strTitle).toString();
+            bool showSpinner = rootObject.value(strShowSpinner).toBool();
+            bool showSplash = rootObject.value(strShowSplash).toBool();
+            QString splashBackground = rootObject.value(strSplashBackGround).toString();
             Q_EMIT(appLifeEventsChanged(appId, event, title, showSpinner, showSplash, splashBackground));
         }
     }

@@ -361,12 +361,12 @@ void SettingsService::serviceResponseDelayed(const QString& method, const QStrin
     checkForErrors(rootObject, token);
     emit response(method, payload, token);
 
-    if (token == m_tokenServerStatusBootd && rootObject.find(strServiceName).value().toString() == serviceNameBootd) {
-        bool connected = rootObject.find(strConnected).value().toBool();
+    if (token == m_tokenServerStatusBootd && rootObject.value(strServiceName).toString() == serviceNameBootd) {
+        bool connected = rootObject.value(strConnected).toBool();
         if (connected)
             subscribeBootdInternal();
     } else if (token == m_tokenBootd && method == methodGetBootStatus) {
-        if (!rootObject.find(strReturnValue).value().toBool())
+        if (!rootObject.value(strReturnValue).toBool())
             return; //Ignore the subscription failed response
 
         setBootStatus(rootObject.value(strBootStatus).toString());
@@ -407,12 +407,12 @@ void SettingsService::serviceResponseDelayed(const QString& method, const QStrin
             m_cacheRead = true;
             tryToSubscribe();
         }
-    } else if (token == m_tokenServerStatusSettings && rootObject.find(strServiceName).value().toString() == serviceNameSettings) {
-        m_connected = rootObject.find(strConnected).value().toBool();
+    } else if (token == m_tokenServerStatusSettings && rootObject.value(strServiceName).toString() == serviceNameSettings) {
+        m_connected = rootObject.value(strConnected).toBool();
         if (m_connected)
             tryToSubscribe();
     } else if (method == methodGetSystemSettings) {
-        if (!rootObject.find(strReturnValue).value().toBool())
+        if (!rootObject.value(strReturnValue).toBool())
             return; //Ignore the subscription failed response
 
         setCached(false);
