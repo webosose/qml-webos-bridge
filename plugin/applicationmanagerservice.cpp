@@ -42,7 +42,6 @@ static const QLatin1String methodMoveLaunchPoint("/moveLaunchPoint");
 static const QLatin1String methodListLaunchPoints("/listLaunchPoints");
 static const QLatin1String methodListApps("/listApps");
 static const QLatin1String methodRunning("/running");
-static const QLatin1String methodOnLaunch("/onLaunch");
 static const QLatin1String methodGetAppLifeStatus("/getAppLifeStatus");
 static const QLatin1String methodGetAppLifeEvents("/getAppLifeEvents");
 static const QLatin1String serviceName("com.webos.applicationManager");
@@ -135,13 +134,6 @@ QString ApplicationManagerService::runningList()
     return m_runningList;
 }
 
-int ApplicationManagerService::subscribeLaunchedAppId()
-{
-    return callWithRetry(serviceUri(),
-            methodOnLaunch,
-            QString(QLatin1String("{\"%1\":%2}")).arg(strSubscribe).arg(strTrue));
-}
-
 int ApplicationManagerService::subscribeAppLifeStatus()
 {
     return callWithRetry(serviceUri(),
@@ -219,15 +211,6 @@ void ApplicationManagerService::serviceResponseDelayed(const QString& method, co
         QString processId = m_closeCalls.value(token);
         if (returnValue == true) {
             Q_EMIT(closed(processId, token));
-        }
-    }
-    else if (method == methodOnLaunch) {
-        QString appId = rootObject.value(strAppId).toString();
-        if (!appId.isEmpty()) {
-            QString title = rootObject.value(strTitle).toString();
-            bool noSplash = rootObject.value(strNoSplash).toBool();
-            QString splashBackground = rootObject.value(strSplashBackGround).toString();
-            Q_EMIT(appLaunched(appId, title, noSplash, splashBackground));
         }
     }
     else if (method == methodGetAppLifeStatus) {

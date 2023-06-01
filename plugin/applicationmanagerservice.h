@@ -81,7 +81,6 @@ public:
     Q_INVOKABLE int removeLaunchPoint(const QString& identifier);
     Q_INVOKABLE int close(const QString& processId);
     Q_INVOKABLE int moveLaunchPoint(int index, int to);
-    Q_INVOKABLE int subscribeLaunchedAppId();
     Q_INVOKABLE int subscribeAppLifeStatus();
     Q_INVOKABLE int subscribeAppLifeEvents();
     Q_INVOKABLE int subscribeApplicationList();
