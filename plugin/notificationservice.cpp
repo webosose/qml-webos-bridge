@@ -138,7 +138,12 @@ void NotificationService::serviceResponse(const QString& method, const QString& 
     qDebug() << "Notification Service Response " << method << payload << token;
     QJsonObject rootObject = QJsonDocument::fromJson(payload.toUtf8()).object();
 
-    if (token == m_tokenServerStatus && rootObject.value(strServiceName).toString() == interfaceName()) {
+    uint64_t ul_token = token < 0 ? LSMESSAGE_TOKEN_INVALID : (uint64_t) token;
+    if (ul_token == LSMESSAGE_TOKEN_INVALID) {
+        qWarning() << "token is not valid";
+        return;
+    }
+    if (ul_token == m_tokenServerStatus && rootObject.value(strServiceName).toString() == interfaceName()) {
         bool connected = rootObject.value(strConnected).toBool();
         if (connected) {
             initSubscriptionCalls();
@@ -153,22 +158,22 @@ void NotificationService::serviceResponse(const QString& method, const QString& 
         return; //Ignore the subscription confirmation response
     }
 
-    if (token == m_tokenToastList && method == methodGetToastNotification) {
+    if (ul_token == m_tokenToastList && method == methodGetToastNotification) {
          if (payload == m_toastList) return;
          m_toastList = payload;
          Q_EMIT(toastListChanged());
     }
-    else if (token == m_tokenAlertList && method == methodGetAlertNotification) {
+    else if (ul_token == m_tokenAlertList && method == methodGetAlertNotification) {
         if (payload == m_alertList) return;
         m_alertList = payload;
         Q_EMIT(alertListChanged());
     }
-    else if (token == m_tokenInputAlertList && method == methodGetInputAlertNotification) {
+    else if (ul_token == m_tokenInputAlertList && method == methodGetInputAlertNotification) {
         if (payload == m_inputAlertList) return;
         m_inputAlertList = payload;
         Q_EMIT(inputAlertListChanged());
     }
-    else if (token == m_tokenPincodePromptList && method == methodGetPincodePromptNotification) {
+    else if (ul_token == m_tokenPincodePromptList && method == methodGetPincodePromptNotification) {
         if (payload == m_pincodePromptList) return;
         m_pincodePromptList = payload;
         Q_EMIT(pincodePromptListChanged());

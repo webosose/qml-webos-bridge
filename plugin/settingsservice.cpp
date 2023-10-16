@@ -361,11 +361,17 @@ void SettingsService::serviceResponseDelayed(const QString& method, const QStrin
     checkForErrors(rootObject, token);
     emit response(method, payload, token);
 
-    if (token == m_tokenServerStatusBootd && rootObject.value(strServiceName).toString() == serviceNameBootd) {
+    if (token < 0) {
+        qWarning() << "token is not valid";
+        return;
+    }
+
+    uint64_t ul_token = (uint64_t) token;
+    if (ul_token == m_tokenServerStatusBootd && rootObject.value(strServiceName).toString() == serviceNameBootd) {
         bool connected = rootObject.value(strConnected).toBool();
         if (connected)
             subscribeBootdInternal();
-    } else if (token == m_tokenBootd && method == methodGetBootStatus) {
+    } else if (ul_token == m_tokenBootd && method == methodGetBootStatus) {
         if (!rootObject.value(strReturnValue).toBool())
             return; //Ignore the subscription failed response
 
@@ -407,7 +413,7 @@ void SettingsService::serviceResponseDelayed(const QString& method, const QStrin
             m_cacheRead = true;
             tryToSubscribe();
         }
-    } else if (token == m_tokenServerStatusSettings && rootObject.value(strServiceName).toString() == serviceNameSettings) {
+    } else if (ul_token == m_tokenServerStatusSettings && rootObject.value(strServiceName).toString() == serviceNameSettings) {
         m_connected = rootObject.value(strConnected).toBool();
         if (m_connected)
             tryToSubscribe();
@@ -417,14 +423,14 @@ void SettingsService::serviceResponseDelayed(const QString& method, const QStrin
 
         setCached(false);
 
-        if (token == m_tokenLocale) {
+        if (ul_token == m_tokenLocale) {
             QString s = rootObject.value(strSettings).toObject().value(strLocaleInfo).toObject().value(strLocales).toObject().value(strUi).toString();
             qInfo() << "Set currentLocale from LS2 response:" << s;
             setCurrentLocale(s);
 
             QString speechToTextLocale = rootObject.value(strSettings).toObject().value(strLocaleInfo).toObject().value(strLocales).toObject().value(strStt).toString();
             setSpeechToTextLocale(speechToTextLocale);
-        } else if (token == m_tokenSystemSettings) {
+        } else if (ul_token == m_tokenSystemSettings) {
             QString s = rootObject.value(strSettings).toObject().value(strScreenRotation).toString();
             qInfo() << "Set screenRotation from LS2 response:" << s;
             setScreenRotation(s);
@@ -450,7 +456,19 @@ void SettingsService::hubError(const QString& method, const QString& error, cons
 // /.../locales/full-package-name/last-dotted-part-of-component-name
 void SettingsService::uninstallTranslator(const QString& dir, const QString& file)
 {
-    QString compName = file.right(file.size() - (file.lastIndexOf(strDot)+1));
+    int lastIndex = file.lastIndexOf(strDot);
+    int fileSize = file.size();
+    if (lastIndex == INT_MAX) {
+        qWarning() << "Cannot increase lastIndex greater than " << INT_MAX;
+        return;
+    }
+
+    if (fileSize < INT_MIN + (lastIndex + 1)) {
+        qWarning() << "Cannot decrease fileSize less than " << INT_MIN;
+        return;
+    }
+
+    QString compName = file.right(fileSize - (lastIndex + 1));
     QString l10nName;
     if (!findl10nFileName(dir, compName, l10nName))
         qDebug() << "failure in finding l10n file: file=" << file << ", dir=" << dir;
@@ -459,7 +477,19 @@ void SettingsService::uninstallTranslator(const QString& dir, const QString& fil
 
 void SettingsService::installTranslator(const QString& dir, const QString& file)
 {
-    QString compName = file.right(file.size() - (file.lastIndexOf(strDot)+1));
+    int lastIndex = file.lastIndexOf(strDot);
+    int fileSize = file.size();
+    if (lastIndex == INT_MAX) {
+        qWarning() << "Cannot increase lastIndex greater than " << INT_MAX;
+        return;
+    }
+
+    if (fileSize < INT_MIN + (lastIndex + 1)) {
+        qWarning() << "Cannot decrease fileSize less than " << INT_MIN;
+        return;
+    }
+
+    QString compName = file.right(fileSize - (lastIndex + 1));
     QString l10nName;
     if (!findl10nFileName(dir, compName, l10nName))
         qDebug() << "failure in finding l10n file: file=" << file << ", dir=" << dir;

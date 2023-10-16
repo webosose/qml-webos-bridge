@@ -167,7 +167,13 @@ void ApplicationManagerService::serviceResponseDelayed(const QString& method, co
     checkForErrors(rootObject, token);
     Q_EMIT response(method, payload, token);
 
-    if (token == m_tokenServerStatus && rootObject.value(strServiceName).toString() == interfaceName()) {
+    if (token < 0) {
+        qWarning() << "token is not valid";
+        return;
+    }
+
+    uint64_t ul_token = (uint64_t) token;
+    if (ul_token == m_tokenServerStatus && rootObject.value(strServiceName).toString() == interfaceName()) {
         bool connected = rootObject.value(strConnected).toBool();
         if (m_connected != connected) {
             m_connected = connected;

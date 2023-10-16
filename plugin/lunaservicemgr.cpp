@@ -56,12 +56,20 @@ bool message_filter(LSHandle *sh, LSMessage *reply, void *ctx)
         return false;
     }
 
+    if (token > INT_MAX) {
+        qWarning() << "token is not a valid number: " << token;
+        return false;
+    }
+
+    int int_token = (int) token;
+
     CallInfo call = listener->callInfos[token];
 
     if (LSMessageIsHubErrorMessage(reply))
-        listener->hubError(call.method, QString(LSMessageGetMethod(reply)), payload, token);
-    else
-        listener->serviceResponse(call.method, QString(payload), token);
+        listener->hubError(call.method, QString(LSMessageGetMethod(reply)), payload, int_token);
+    else {
+        listener->serviceResponse(call.method, QString(payload), int_token);
+    }
 
     // Remove callInfo for one-reply call
     if (!call.subscription)

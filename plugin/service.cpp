@@ -58,7 +58,7 @@ private:
     QSet<size_t> m_listeners;
     QQueue<Response> m_responses;
     QSemaphore m_semaphore;
-    int m_postSleepMs = 0;
+    uint32_t m_postSleepMs = 0;
 };
 
 const QLatin1String Service::strURIScheme("luna://");
@@ -164,7 +164,7 @@ int Service::callInternal(const QString& service, const QString& method, const Q
 
     if (token != LSMESSAGE_TOKEN_INVALID) {
         if (timeout.isNumber()) {
-            m_serviceManager->setTimeout(token, timeout.toUInt());
+            m_serviceManager->setTimeout(token, timeout.toInt());
         } else {
             bool isUndefined = timeout.isUndefined();
             if (!isUndefined)
@@ -195,7 +195,7 @@ int Service::callForApplication(const QString& appId, const QString& service, co
 
     if (token != LSMESSAGE_TOKEN_INVALID) {
         if (timeout.isNumber()) {
-            m_serviceManager->setTimeout(token, timeout.toUInt());
+            m_serviceManager->setTimeout(token, timeout.toInt());
         } else {
             bool isUndefined = timeout.isUndefined();
             if (!isUndefined)
@@ -621,7 +621,7 @@ MessageSpreader *MessageSpreader::instance()
 
 MessageSpreader::MessageSpreader()
 {
-    m_postSleepMs = qgetenv("WEBOS_QML_WEBOSSERVICES_SPREAD_EVENTS_WAIT_AFTER_RESPONSE").toInt();
+    m_postSleepMs = qgetenv("WEBOS_QML_WEBOSSERVICES_SPREAD_EVENTS_WAIT_AFTER_RESPONSE").toUInt();
 }
 
 MessageSpreader::~MessageSpreader()
@@ -693,6 +693,10 @@ MessageSpreaderListener::MessageSpreaderListener(QObject *parent)
     :Service(parent)
 {
     static size_t s_handle = 0;
+    if (s_handle == UINT_MAX) {
+        qWarning() << "Cannot increase s_handle greater than " << UINT_MAX;
+        s_handle = 0;
+    }
     m_handle = ++s_handle;
 
     m_spreadMethods = QString(qgetenv("WEBOS_QML_WEBOSSERVICES_SPREAD_METHODS")).split(',');
