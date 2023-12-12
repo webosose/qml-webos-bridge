@@ -68,9 +68,7 @@ const QLatin1String Service::strSubscribe("subscribe");
 const QLatin1String Service::strSubscribed("subscribed");
 const QLatin1String Service::strErrorCode("errorCode");
 const QLatin1String Service::strErrorText("errorText");
-const QLatin1String Service::strErrorCodeJsonParse("-1000");
 const QLatin1String Service::strErrorTextJsonParse("Json parse error");
-const QLatin1String Service::strErrorCodeInvalidType("-1001");
 const QLatin1String Service::strErrorTextInvalidType("Invalid parameter type");
 const QLatin1String Service::strErrorMsg("errorMsg");
 const QLatin1String Service::strServiceName("serviceName");
@@ -368,6 +366,8 @@ bool Service::callback(LSHandle *lshandle, LSMessage *msg, void *user_data)
             callerId = LSMessageGetSenderServiceName(msg);
     }
 
+    const int errorCodeJsonParse = -1000;
+    const int errorCodeInvalidType = -1001;
     bool success = false;
 
     QJsonObject returnObject;
@@ -375,7 +375,7 @@ bool Service::callback(LSHandle *lshandle, LSMessage *msg, void *user_data)
     QJsonDocument jsonDoc = QJsonDocument::fromJson(payload.toUtf8(), &jsonError);
 
     if (jsonError.error != QJsonParseError::NoError) {
-        returnObject.insert(strErrorCode, strErrorCodeJsonParse);
+        returnObject.insert(strErrorCode, errorCodeJsonParse);
         returnObject.insert(strErrorText, strErrorTextJsonParse);
         returnObject.insert(strReturnValue, success);
         LSErrorSafe lsError;
@@ -390,7 +390,7 @@ bool Service::callback(LSHandle *lshandle, LSMessage *msg, void *user_data)
 #endif
 
     if (message.contains(strSubscribe) && !message.value(strSubscribe).isBool()) {
-        returnObject.insert(strErrorCode, strErrorCodeInvalidType);
+        returnObject.insert(strErrorCode, errorCodeInvalidType);
         returnObject.insert(strErrorText, strErrorTextInvalidType);
         returnObject.insert(strReturnValue, success);
         LSErrorSafe lsError;

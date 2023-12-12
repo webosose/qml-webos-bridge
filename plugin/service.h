@@ -169,9 +169,7 @@ public:
     static const QLatin1String strSubscribed;
     static const QLatin1String strErrorCode;
     static const QLatin1String strErrorText;
-    static const QLatin1String strErrorCodeJsonParse;
     static const QLatin1String strErrorTextJsonParse;
-    static const QLatin1String strErrorCodeInvalidType;
     static const QLatin1String strErrorTextInvalidType;
     static const QLatin1String strErrorMsg;
     static const QLatin1String strServiceName;
