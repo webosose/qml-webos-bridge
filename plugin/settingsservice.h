@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2022 LG Electronics, Inc.
+// Copyright (c) 2012-2024 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -154,6 +154,7 @@ private:
 
     bool m_subscriptionRequested;
     bool m_speechToTextLocaleMode;
+    bool m_useCache;
     bool m_cacheRead;
     bool m_connected;
 

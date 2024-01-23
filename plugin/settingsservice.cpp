@@ -1,4 +1,4 @@
-// Copyright (c) 2012-2022 LG Electronics, Inc.
+// Copyright (c) 2012-2024 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -241,6 +241,7 @@ SettingsService::SettingsService(QObject * parent)
     , m_tokenBootd(LSMESSAGE_TOKEN_INVALID)
     , m_subscriptionRequested(false)
     , m_speechToTextLocaleMode(false)
+    , m_useCache(true)
     , m_cacheRead(false)
     , m_connected(false)
 {
@@ -321,7 +322,7 @@ bool SettingsService::subscribeInternal()
 
 bool SettingsService::tryToSubscribe()
 {
-    if (m_connected && m_cacheRead && m_subscriptionRequested) {
+    if (m_connected && (!m_useCache || m_cacheRead) && m_subscriptionRequested) {
         qInfo() << "Subscribing to settings";
         return subscribeInternal();
     }
@@ -378,7 +379,7 @@ void SettingsService::serviceResponseDelayed(const QString& method, const QStrin
         setBootStatus(rootObject.value(strBootStatus).toString());
 
         // Read settings from file caches at very first
-        if (!m_cacheRead) {
+        if (m_useCache && !m_cacheRead) {
             // Mark cached as true indicating following reads are performed from the file cache
             setCached(true);
 
@@ -449,6 +450,14 @@ void SettingsService::hubError(const QString& method, const QString& error, cons
             qWarning() << "SettingsService: Hub error:" << error << "- recover subscriptions";
             resetSubscription();
         }
+    } else if (token == m_tokenBootd &&
+        (error == LUNABUS_ERROR_UNKNOWN_METHOD || error == LUNABUS_ERROR_PERMISSION_DENIED)) {
+        // Since we don't have permission on getting the boot status, turn to non-cached mode.
+        // It seems that luna-service2 returns LUNABUS_ERROR_UNKNOWN_METHOD
+        // instead of LUNABUS_ERROR_PERMISSION_DENIED even for the permission error case.
+        qWarning() << "Unable to get the boot status due to lack of permission, continue subscribing to com.webos.settingsservice";
+        m_useCache = false;
+        tryToSubscribe();
     }
 }
 
