@@ -251,9 +251,27 @@ void Service::serviceResponse(const QString& method, const QString& payload, int
     // It seems like a bug in Qt 5.9 where accessing "returnValue" key in obj
     // results in the key gets defined as "null". Due to this we have to keep
     // the original object untouched and use it when emitting signals.
-    QJsonObject obj = QJsonDocument::fromJson(payload.toUtf8()).object();
+    QJsonParseError parseError;
+    parseError.error = QJsonParseError::NoError;
+
+    QJsonDocument doc = QJsonDocument::fromJson(payload.toUtf8(), &parseError);
+    if (parseError.error != QJsonParseError::NoError) {
+        qWarning() << "JSON Parsing error:" << parseError.errorString();
+        Q_EMIT error(-1, parseError.errorString(), token);
+        return;
+    }
+    QJsonObject obj = doc.object();
+
+    // Check if the JSON object is empty or invalid
+    if (obj.isEmpty()) {
+        qWarning() << "JSON Object is empty or invalid.";
+        Q_EMIT error(-2, "JSON Object is empty or invalid", token);
+        return;
+    }
+
     QVariantMap vmap = obj.toVariantMap();
-    if (obj[strReturnValue].toBool())
+    // Check if the 'strReturnValue' key exists and is true
+    if (obj.contains(strReturnValue) && obj[strReturnValue].toBool())
         Q_EMIT callSuccess(vmap);
     else
         Q_EMIT callFailure(vmap);
